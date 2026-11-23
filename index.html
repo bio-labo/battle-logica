@@ -1,0 +1,3767 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>バトル・ロジカ（BATTLE LOGICA）｜細胞ラインディフェンス</title>
+<style>
+  :root {
+    --bg-dark: #090d1a;
+    --bg-panel: #0f172a;
+    --bg-card: #1e293b;
+    --accent-cyan: #38bdf8;
+    --accent-gold: #facc15;
+    --accent-green: #22c55e;
+    --accent-red: #ef4444;
+    --accent-purple: #a855f7;
+    --accent-pink: #ec4899;
+    --text-main: #f8fafc;
+    --text-sub: #94a3b8;
+    --border-soft: rgba(148, 163, 184, 0.25);
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    background: var(--bg-dark);
+    color: var(--text-main);
+    font-family: 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', system-ui, sans-serif;
+    overflow: hidden;
+  }
+
+  /* ================= 画面共通 ================= */
+  .screen {
+    display: none;
+    width: 100%;
+    height: 100dvh;
+    flex-direction: column;
+    position: relative;
+  }
+  .screen.active {
+    display: flex;
+  }
+
+  /* 共通トップバー（ホーム・サブ画面用） */
+  .app-header {
+    height: 54px;
+    min-height: 54px;
+    background: linear-gradient(180deg, #0f172a 0%, #0b1120 100%);
+    border-bottom: 2px solid rgba(56, 189, 248, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 14px;
+    gap: 8px;
+    z-index: 20;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .header-title {
+    font-size: 1rem;
+    font-weight: 900;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .currency-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .currency-pill {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: #1e293b;
+    border: 1.5px solid rgba(250, 204, 21, 0.55);
+    border-radius: 999px;
+    padding: 4px 11px;
+    font-size: 0.82rem;
+    font-weight: 900;
+    color: #fde047;
+    white-space: nowrap;
+  }
+  .currency-pill.medal {
+    border-color: rgba(192, 132, 252, 0.65);
+    color: #e9d5ff;
+  }
+
+  .btn-back {
+    background: #1e293b;
+    border: 1px solid rgba(148, 163, 184, 0.45);
+    color: #f8fafc;
+    font-size: 0.78rem;
+    font-weight: 800;
+    padding: 6px 11px;
+    border-radius: 9px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn-back:hover { border-color: var(--accent-cyan); }
+
+  .scroll-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 14px;
+  }
+
+  .container-max {
+    max-width: 980px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* ================= 1. タイトル／ホーム画面 ================= */
+  #screen-title {
+    background:
+      radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.16) 0%, transparent 45%),
+      radial-gradient(circle at 80% 75%, rgba(168, 85, 247, 0.16) 0%, transparent 45%),
+      linear-gradient(180deg, #0b1326 0%, #060913 100%);
+  }
+
+  .home-hero {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.94), rgba(30, 58, 138, 0.45));
+    border: 2px solid rgba(56, 189, 248, 0.55);
+    border-bottom: 5px solid rgba(14, 165, 233, 0.65);
+    border-radius: 22px;
+    padding: 20px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  }
+
+  .logo-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #0284c7, #7c3aed);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 900;
+    padding: 4px 12px;
+    border-radius: 999px;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+    box-shadow: 0 3px 10px rgba(124, 58, 237, 0.45);
+  }
+
+  .hero-title {
+    font-size: clamp(1.45rem, 3.6vw, 2.2rem);
+    font-weight: 900;
+    background: linear-gradient(90deg, #38bdf8, #a7f3d0, #fde047);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .hero-sub {
+    font-size: 0.82rem;
+    color: var(--text-sub);
+    margin-top: 4px;
+  }
+
+  .home-stats-mini {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .mini-stat-box {
+    background: rgba(2, 6, 23, 0.65);
+    border: 1px solid var(--border-soft);
+    border-radius: 12px;
+    padding: 8px 14px;
+    text-align: center;
+  }
+  .mini-stat-val { font-size: 1.05rem; font-weight: 900; color: #38bdf8; }
+  .mini-stat-lbl { font-size: 0.68rem; color: var(--text-sub); font-weight: 700; }
+
+  /* メイン5大ナビゲーション（バトル・編成・育成・ガチャ・メニュー） */
+  .home-nav-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  @media (min-width: 720px) {
+    .home-nav-grid {
+      grid-template-columns: repeat(6, 1fr);
+    }
+    .nav-card.nav-battle { grid-column: span 3; }
+    .nav-card.nav-formation { grid-column: span 3; }
+    .nav-card.nav-upgrade { grid-column: span 2; }
+    .nav-card.nav-gacha { grid-column: span 2; }
+    .nav-card.nav-menu { grid-column: span 2; }
+  }
+  @media (max-width: 719px) {
+    .nav-card.nav-battle { grid-column: span 2; }
+  }
+
+  .nav-card {
+    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+    border: 2px solid rgba(148, 163, 184, 0.35);
+    border-bottom: 5px solid #334155;
+    border-radius: 18px;
+    padding: 18px 16px;
+    color: var(--text-main);
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: transform 0.12s, border-color 0.14s, box-shadow 0.14s;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  }
+  .nav-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  }
+  .nav-card:active { transform: translateY(2px); }
+
+  .nav-card.nav-battle {
+    background: linear-gradient(135deg, #0284c7 0%, #1d4ed8 100%);
+    border-color: #38bdf8;
+    border-bottom-color: #0369a1;
+    box-shadow: 0 10px 28px rgba(2, 132, 199, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  }
+  .nav-card.nav-formation {
+    background: linear-gradient(180deg, rgba(20, 83, 45, 0.45) 0%, #0f172a 100%);
+    border-color: rgba(34, 197, 94, 0.65);
+    border-bottom-color: #15803d;
+  }
+  .nav-card.nav-upgrade {
+    background: linear-gradient(180deg, rgba(113, 63, 18, 0.45) 0%, #0f172a 100%);
+    border-color: rgba(250, 204, 21, 0.65);
+    border-bottom-color: #a16207;
+  }
+  .nav-card.nav-gacha {
+    background: linear-gradient(180deg, rgba(88, 28, 135, 0.5) 0%, #0f172a 100%);
+    border-color: rgba(192, 132, 252, 0.7);
+    border-bottom-color: #7e22ce;
+  }
+  .nav-card.nav-menu {
+    border-color: rgba(148, 163, 184, 0.5);
+    border-bottom-color: #475569;
+  }
+
+  .nav-icon {
+    font-size: 2.1rem;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: rgba(2, 6, 23, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .nav-title { font-size: 1.1rem; font-weight: 900; }
+  .nav-desc { font-size: 0.76rem; color: #cbd5e1; margin-top: 2px; line-height: 1.35; }
+
+  /* ================= 2. ステージ選択（縦スクロール拡張対応） ================= */
+  .chapter-block {
+    background: rgba(15, 23, 42, 0.85);
+    border: 1.5px solid var(--border-soft);
+    border-radius: 16px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .chapter-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border-soft);
+    padding-bottom: 8px;
+  }
+  .chapter-title { font-size: 1rem; font-weight: 900; color: #38bdf8; }
+  .chapter-sub { font-size: 0.74rem; color: var(--text-sub); }
+
+  .stage-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .stage-row {
+    background: #1e293b;
+    border: 1.5px solid rgba(148, 163, 184, 0.25);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    cursor: pointer;
+    transition: transform 0.12s, border-color 0.12s;
+  }
+  .stage-row:hover:not(.locked) {
+    transform: translateX(3px);
+    border-color: var(--accent-cyan);
+  }
+  .stage-row.cleared { border-color: rgba(34, 197, 94, 0.6); }
+  .stage-row.locked { opacity: 0.45; cursor: not-allowed; }
+
+  .stage-row-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .stage-code {
+    background: #0f172a;
+    border: 1px solid #38bdf8;
+    color: #38bdf8;
+    font-weight: 900;
+    font-size: 0.85rem;
+    padding: 6px 10px;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+  .stage-info-title { font-size: 0.96rem; font-weight: 900; }
+  .stage-info-sub { font-size: 0.74rem; color: var(--text-sub); margin-top: 2px; }
+  .stage-reward-tag {
+    font-size: 0.74rem;
+    font-weight: 800;
+    color: #fde047;
+    background: rgba(2, 6, 23, 0.6);
+    padding: 4px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  /* ================= 3. 編成画面（にゃんこ風10枠デッキ） ================= */
+  .deck-panel {
+    background: rgba(15, 23, 42, 0.92);
+    border: 2px solid rgba(34, 197, 94, 0.45);
+    border-radius: 16px;
+    padding: 12px;
+  }
+  .deck-grid-10 {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .deck-slot {
+    background: #1e293b;
+    border: 2px dashed rgba(148, 163, 184, 0.4);
+    border-radius: 12px;
+    padding: 6px 4px;
+    min-height: 82px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    cursor: pointer;
+    position: relative;
+    transition: border-color 0.12s, transform 0.1s;
+  }
+  .deck-slot.filled {
+    border-style: solid;
+    border-color: #38bdf8;
+    background: linear-gradient(180deg, #1e3a5f 0%, #0f172a 100%);
+  }
+  .deck-slot.target-highlight {
+    border-color: #facc15;
+    box-shadow: 0 0 12px rgba(250, 204, 21, 0.5);
+  }
+  .slot-num {
+    position: absolute;
+    top: 3px;
+    left: 5px;
+    font-size: 0.62rem;
+    font-weight: 900;
+    color: #94a3b8;
+  }
+
+  .owned-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+    gap: 10px;
+  }
+  .char-card {
+    background: #1e293b;
+    border: 2px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.12s, border-color 0.12s;
+  }
+  .char-card:hover { border-color: #38bdf8; transform: translateY(-2px); }
+  .char-card.selected {
+    border-color: #facc15;
+    box-shadow: 0 0 16px rgba(250, 204, 21, 0.35);
+    background: #1e293b;
+  }
+  .char-card.in-deck { border-color: #22c55e; }
+  .in-deck-badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: #16a34a;
+    color: #fff;
+    font-size: 0.62rem;
+    font-weight: 900;
+    padding: 2px 6px;
+    border-radius: 999px;
+  }
+
+  /* ================= 4. 育成画面（キャラ強化＋研究所） ================= */
+  .sub-tabs {
+    display: flex;
+    gap: 8px;
+  }
+  .sub-tab-btn {
+    flex: 1;
+    padding: 10px;
+    border-radius: 12px;
+    border: 1.5px solid var(--border-soft);
+    background: #1e293b;
+    color: #cbd5e1;
+    font-weight: 900;
+    font-size: 0.86rem;
+    cursor: pointer;
+  }
+  .sub-tab-btn.active {
+    background: linear-gradient(135deg, #0284c7, #2563eb);
+    border-color: #38bdf8;
+    color: #fff;
+  }
+
+  .upgrade-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    gap: 10px;
+  }
+  .upgrade-card {
+    background: #1e293b;
+    border: 1.5px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .upgrade-info { flex: 1; min-width: 0; }
+  .upgrade-name { font-size: 0.94rem; font-weight: 900; }
+  .upgrade-lv { font-size: 0.76rem; font-weight: 900; color: #38bdf8; margin-top: 2px; }
+  .upgrade-stats { font-size: 0.72rem; color: var(--text-sub); margin-top: 3px; }
+  .btn-lvup {
+    background: linear-gradient(135deg, #eab308, #ca8a04);
+    color: #0f172a;
+    border: none;
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-weight: 900;
+    font-size: 0.76rem;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .btn-lvup:disabled {
+    background: #334155;
+    color: #64748b;
+    cursor: not-allowed;
+  }
+
+  /* ================= 5. ガチャ画面（6種類の役割別タブ＋豪華筐体） ================= */
+  .gacha-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  @media (min-width: 720px) {
+    .gacha-tabs { grid-template-columns: repeat(6, 1fr); }
+  }
+  .gacha-tab-btn {
+    background: linear-gradient(180deg, #1e293b, #0f172a);
+    border: 2px solid rgba(148, 163, 184, 0.3);
+    border-bottom: 4px solid #334155;
+    border-radius: 12px;
+    padding: 9px 6px;
+    color: #cbd5e1;
+    font-weight: 900;
+    font-size: 0.76rem;
+    cursor: pointer;
+    text-align: center;
+    transition: transform 0.1s, border-color 0.15s;
+  }
+  .gacha-tab-btn.active {
+    background: linear-gradient(135deg, #7c3aed, #db2777);
+    border-color: #f0abfc;
+    border-bottom-color: #9d174d;
+    color: #fff;
+    box-shadow: 0 6px 18px rgba(168, 85, 247, 0.45);
+  }
+  .gacha-showcase {
+    border: 2px solid rgba(192, 132, 252, 0.6);
+    border-bottom: 5px solid rgba(126, 34, 206, 0.8);
+    border-radius: 22px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  }
+  .gacha-pool-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    background: rgba(2, 6, 23, 0.48);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    padding: 14px 10px;
+  }
+  .gacha-pool-chip {
+    background: rgba(30, 41, 59, 0.88);
+    border: 1.5px solid rgba(148, 163, 184, 0.3);
+    border-radius: 14px;
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    min-width: 92px;
+  }
+  .gacha-actions {
+    display: flex;
+    gap: 12px;
+  }
+  .btn-gacha {
+    flex: 1;
+    padding: 14px 10px;
+    border-radius: 14px;
+    border: none;
+    border-bottom: 4px solid rgba(0, 0, 0, 0.35);
+    font-weight: 900;
+    font-size: 0.94rem;
+    cursor: pointer;
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    transition: transform 0.1s;
+  }
+  .btn-gacha:active:not(:disabled) { transform: translateY(2px); }
+  .btn-gacha.single { background: linear-gradient(135deg, #0284c7, #2563eb); border-bottom-color: #1e40af; }
+  .btn-gacha.multi { background: linear-gradient(135deg, #9333ea, #db2777); border-bottom-color: #9d174d; }
+  .btn-gacha:disabled { opacity: 0.45; cursor: not-allowed; }
+  .rate-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    font-size: 0.72rem;
+    font-weight: 800;
+  }
+  .rate-pill {
+    background: rgba(2, 6, 23, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 999px;
+    padding: 3px 9px;
+  }
+
+  /* ================= 6. メニュー（図鑑・設定） ================= */
+  .dex-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+    gap: 10px;
+  }
+  .dex-card {
+    background: #1e293b;
+    border: 1.5px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 4px;
+  }
+  .dex-card.unowned { opacity: 0.45; }
+
+  /* ================= 7. 横型バトル画面（最大10枠2段対応） ================= */
+  #screen-battle { background: #060913; justify-content: space-between; }
+
+  .battle-top-bar {
+    height: 42px;
+    min-height: 42px;
+    background: rgba(15, 23, 42, 0.95);
+    border-bottom: 1px solid rgba(56, 189, 248, 0.28);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    gap: 8px;
+    z-index: 10;
+  }
+
+  .hud-btn {
+    background: #1e293b;
+    border: 1px solid rgba(148, 163, 184, 0.4);
+    color: #f8fafc;
+    font-size: 0.74rem;
+    font-weight: 800;
+    padding: 4px 9px;
+    border-radius: 8px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .hud-btn.active { background: #0284c7; border-color: #38bdf8; }
+
+  .atp-display-pill {
+    background: #0f172a;
+    border: 2px solid #facc15;
+    border-radius: 999px;
+    padding: 2px 12px;
+    font-weight: 900;
+    font-size: 0.86rem;
+    color: #fde047;
+    white-space: nowrap;
+  }
+
+  .battle-stage-wrap {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at center, #111c33 0%, #060913 100%);
+    overflow: hidden;
+  }
+
+  #battleCanvas {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+
+  .portrait-hint {
+    display: none;
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(56, 189, 248, 0.5);
+    color: #bae6fd;
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 2px 10px;
+    border-radius: 999px;
+    pointer-events: none;
+    z-index: 8;
+    white-space: nowrap;
+  }
+  @media (orientation: portrait) and (max-width: 768px) {
+    .portrait-hint { display: block; }
+  }
+
+  .boss-banner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    background: linear-gradient(90deg, rgba(127, 29, 29, 0.95), rgba(220, 38, 38, 0.95), rgba(127, 29, 29, 0.95));
+    border-top: 3px solid #fde047;
+    border-bottom: 3px solid #fde047;
+    color: #fff;
+    padding: 8px 30px;
+    font-size: clamp(1rem, 3vw, 1.55rem);
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 15;
+    white-space: nowrap;
+  }
+  .boss-banner.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+  /* バトル操作デッキ（最大10枠2段 or 5枠1段自動最適化） */
+  .battle-deck {
+    background: linear-gradient(180deg, #0f172a 0%, #090d1a 100%);
+    border-top: 2px solid rgba(56, 189, 248, 0.35);
+    display: grid;
+    grid-template-columns: 102px 1fr 102px;
+    gap: 6px;
+    padding: 6px 8px;
+    align-items: stretch;
+    z-index: 10;
+  }
+  @media (max-width: 640px) {
+    .battle-deck {
+      grid-template-columns: 74px 1fr 74px;
+      gap: 4px;
+      padding: 5px;
+    }
+  }
+
+  .special-btn {
+    position: relative;
+    border-radius: 12px;
+    border: 2px solid #475569;
+    background: linear-gradient(180deg, #1e293b, #0f172a);
+    color: #f8fafc;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 4px;
+    overflow: hidden;
+  }
+  .special-btn:disabled { opacity: 0.58; cursor: not-allowed; }
+  .special-btn.ready-atp { border-color: #facc15; background: linear-gradient(180deg, #422006, #1e1b0a); }
+  .special-btn.ready-cannon {
+    border-color: #38bdf8;
+    background: linear-gradient(180deg, #0369a1, #0c4a6e);
+    animation: pulseGlow 1.1s infinite ease-in-out;
+  }
+  @keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 10px rgba(56, 189, 248, 0.4); }
+    50% { box-shadow: 0 0 22px rgba(56, 189, 248, 0.9); }
+  }
+  .special-fill {
+    position: absolute; bottom: 0; left: 0; width: 100%;
+    background: rgba(56, 189, 248, 0.25); pointer-events: none;
+  }
+  .special-icon { font-size: 1.2rem; z-index: 1; }
+  .special-title { font-size: 0.65rem; font-weight: 900; z-index: 1; text-align: center; }
+  .special-sub { font-size: 0.66rem; font-weight: 800; color: #fde047; z-index: 1; }
+
+  .unit-slots {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+    min-width: 0;
+  }
+
+  .unit-btn {
+    position: relative;
+    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+    border: 2px solid #334155;
+    border-radius: 10px;
+    color: #f8fafc;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 3px 2px;
+    height: 62px;
+    overflow: hidden;
+    min-width: 0;
+  }
+  .unit-btn.empty-slot {
+    opacity: 0.22;
+    cursor: default;
+    border-style: dashed;
+  }
+  .unit-btn.available {
+    border-color: #38bdf8;
+    border-bottom: 3px solid #0284c7;
+    background: linear-gradient(180deg, #0369a1 0%, #0f172a 100%);
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  }
+  .unit-btn.available:active { transform: scale(0.95); }
+  .unit-btn.cooldown { opacity: 0.65; }
+  .unit-btn.no-atp { opacity: 0.52; }
+
+  .unit-cd-overlay {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(2, 6, 23, 0.72); pointer-events: none; z-index: 2;
+  }
+  .unit-cd-bar {
+    position: absolute; bottom: 0; left: 0; height: 3px;
+    background: #38bdf8; z-index: 3;
+  }
+  .unit-icon-canvas { width: 34px; height: 28px; display: block; z-index: 1; }
+  .unit-name {
+    font-size: 0.6rem; font-weight: 900; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; max-width: 100%; z-index: 1;
+  }
+  .unit-cost {
+    font-size: 0.62rem; font-weight: 900; color: #fde047;
+    background: rgba(2, 6, 23, 0.75); padding: 0 5px; border-radius: 999px; z-index: 1;
+  }
+  @media (max-width: 640px) {
+    .unit-btn { height: 52px; }
+    .unit-icon-canvas { width: 26px; height: 22px; }
+    .unit-name { font-size: 0.54rem; }
+  }
+
+  /* ================= モーダル & トースト ================= */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 6, 23, 0.82);
+    backdrop-filter: blur(4px);
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 16px;
+  }
+  .modal-overlay.show { display: flex; }
+
+  .modal-card {
+    width: 100%;
+    max-width: 480px;
+    background: linear-gradient(180deg, #1e293b, #0f172a);
+    border: 3px solid var(--accent-gold);
+    border-radius: 20px;
+    padding: 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 90dvh;
+    overflow-y: auto;
+  }
+  .modal-card.lose { border-color: var(--accent-red); }
+
+  .gacha-result-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(115px, 1fr));
+    gap: 8px;
+  }
+  .gacha-res-item {
+    background: rgba(2, 6, 23, 0.65);
+    border: 1.5px solid #a855f7;
+    border-radius: 12px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .result-actions { display: flex; gap: 10px; }
+  .btn-action {
+    flex: 1; padding: 11px; border-radius: 12px; border: none;
+    font-weight: 900; font-size: 0.9rem; cursor: pointer;
+  }
+  .btn-primary { background: linear-gradient(135deg, #0284c7, #2563eb); color: #fff; }
+  .btn-secondary { background: #334155; color: #f8fafc; }
+
+  #toast {
+    position: fixed;
+    bottom: 18px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(15, 23, 42, 0.96);
+    border: 1.5px solid #38bdf8;
+    color: #f8fafc;
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 800;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 100;
+    white-space: nowrap;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- ==================== 1. タイトル／ホーム画面 ==================== -->
+<section id="screen-title" class="screen active">
+  <header class="app-header">
+    <div class="header-left">
+      <span class="header-title">⚔️ バトル・ロジカ</span>
+    </div>
+    <div class="currency-group">
+      <div class="currency-pill">⚡ <span id="homeAtp">0</span> ATP</div>
+      <div class="currency-pill medal">🧬 <span id="homeMedals">0</span> メダル</div>
+    </div>
+  </header>
+
+  <div class="scroll-body">
+    <div class="container-max">
+      <div class="home-hero">
+        <div>
+          <span class="logo-badge">LOGICA SERIES 第4弾</span>
+          <h1 class="hero-title">バトル・ロジカ（BATTLE LOGICA）</h1>
+          <p class="hero-sub">全20種族の微生物＆免疫細胞を集め、最強の10体デッキで病原体コロニーを制圧せよ！</p>
+        </div>
+        <div class="home-stats-mini">
+          <div class="mini-stat-box">
+            <div class="mini-stat-val" id="statOwnedCount">3 / 20</div>
+            <div class="mini-stat-lbl">所持種族</div>
+          </div>
+          <div class="mini-stat-box">
+            <div class="mini-stat-val" id="statClearedCount">0 / 12</div>
+            <div class="mini-stat-lbl">クリアステージ</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5大ナビゲーション -->
+      <div class="home-nav-grid">
+        <button class="nav-card nav-battle" onclick="openStagesScreen()">
+          <div class="nav-icon">⚔️</div>
+          <div>
+            <div class="nav-title">バトル出撃</div>
+            <div class="nav-desc">1-1〜各章のステージへ出撃！クリアで⚡ATP＆🧬DNAメダルを獲得</div>
+          </div>
+        </button>
+
+        <button class="nav-card nav-formation" onclick="openFormationScreen()">
+          <div class="nav-icon">🛡️</div>
+          <div>
+            <div class="nav-title">チーム編成</div>
+            <div class="nav-desc">最大10体（2段×5枠）の出撃デッキを自由にカスタマイズ</div>
+          </div>
+        </button>
+
+        <button class="nav-card nav-upgrade" onclick="openUpgradeScreen()">
+          <div class="nav-icon">📈</div>
+          <div>
+            <div class="nav-title">育成・強化</div>
+            <div class="nav-desc">⚡ATPを使って細胞LvUP＆進化・研究所施設の強化</div>
+          </div>
+        </button>
+
+        <button class="nav-card nav-gacha" onclick="openGachaScreen()">
+          <div class="nav-icon">🎰</div>
+          <div>
+            <div class="nav-title">役割別ガチャ（6種）</div>
+            <div class="nav-desc">🧬DNAメダルで壁・速攻・火力・範囲・支援・大型を狙い撃ち！</div>
+          </div>
+        </button>
+
+        <button class="nav-card nav-menu" onclick="openMenuScreen()">
+          <div class="nav-icon">⚙️</div>
+          <div>
+            <div class="nav-title">メニュー</div>
+            <div class="nav-desc">全20種族図鑑・遊び方・サウンド・セーブ管理</div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 2. ステージ選択画面（縦スクロール拡張対応） ==================== -->
+<section id="screen-stages" class="screen">
+  <header class="app-header">
+    <div class="header-left">
+      <button class="btn-back" onclick="goHome()">⬅️ ホーム</button>
+      <span class="header-title">🗺️ ステージ選択</span>
+    </div>
+    <div class="currency-group">
+      <div class="currency-pill">⚡ <span class="sync-atp">0</span></div>
+      <div class="currency-pill medal">🧬 <span class="sync-medals">0</span></div>
+    </div>
+  </header>
+  <div class="scroll-body">
+    <div class="container-max">
+      <div class="sub-tabs">
+        <button id="stTabStory" class="sub-tab-btn active" onclick="switchStageCategory('story')">📖 ストーリー</button>
+        <button id="stTabCore" class="sub-tab-btn" onclick="switchStageCategory('core')">💎 進化コア戦線</button>
+        <button id="stTabSpecial" class="sub-tab-btn" onclick="switchStageCategory('special')">⚡ 特別ステージ</button>
+      </div>
+      <div id="stagesContainer" style="display:flex; flex-direction:column; gap:14px;"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 3. チーム編成画面（最大10枠） ==================== -->
+<section id="screen-formation" class="screen">
+  <header class="app-header">
+    <div class="header-left">
+      <button class="btn-back" onclick="goHome()">⬅️ ホーム</button>
+      <span class="header-title">🛡️ チーム編成（最大10体）</span>
+    </div>
+    <div class="currency-group">
+      <button class="btn-back" onclick="autoBuildDeck()">⚡ 自動編成</button>
+    </div>
+  </header>
+  <div class="scroll-body">
+    <div class="container-max">
+      <div class="deck-panel">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
+          <strong style="font-size:0.9rem; color:#4ade80;">📋 出撃デッキ（上段5枠＋下段5枠）</strong>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button class="hud-btn" onclick="renameActivePreset()">✏️ 編成名変更</button>
+            <span id="presetUnlockBtnWrap"></span>
+          </div>
+        </div>
+        <div id="formationPresetTabs" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;"></div>
+        <span id="formationHint" style="font-size:0.74rem; color:#cbd5e1; display:block; margin-bottom:4px;">下の所持キャラをタップ ➔ 入れたい枠をタップ（枠のみタップで解除）</span>
+        <div class="deck-grid-10" id="formationDeckGrid"></div>
+      </div>
+
+      <div>
+        <div style="font-size:0.86rem; font-weight:900; color:#cbd5e1; margin-bottom:8px;">🧬 所持している細胞ユニット</div>
+        <div id="formationFilterBar" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;"></div>
+        <div class="owned-grid" id="formationOwnedGrid"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 4. 育成・強化画面 ==================== -->
+<section id="screen-upgrade" class="screen">
+  <header class="app-header">
+    <div class="header-left">
+      <button class="btn-back" onclick="goHome()">⬅️ ホーム</button>
+      <span class="header-title">📈 育成・強化</span>
+    </div>
+    <div class="currency-group">
+      <div class="currency-pill">⚡ <span class="sync-atp">0</span> ATP</div>
+      <div class="currency-pill" style="border-color:rgba(56,189,248,0.65); color:#bae6fd;">💎 <span class="sync-cores">0</span></div>
+    </div>
+  </header>
+  <div class="scroll-body">
+    <div class="container-max">
+      <div class="sub-tabs">
+        <button id="upTabChar" class="sub-tab-btn active" onclick="switchUpgradeTab('char')">🧬 細胞キャラ育成</button>
+        <button id="upTabFacility" class="sub-tab-btn" onclick="switchUpgradeTab('facility')">🏛️ バイオ研究所（施設）</button>
+      </div>
+      <div id="upgradeFilterBar" style="display:flex; gap:6px; flex-wrap:wrap;"></div>
+      <div class="upgrade-list" id="upgradeListContainer"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 5. 6種類の役割別ガチャ画面 ==================== -->
+<section id="screen-gacha" class="screen">
+  <header class="app-header">
+    <div class="header-left">
+      <button class="btn-back" onclick="goHome()">⬅️ ホーム</button>
+      <span class="header-title">🎰 役割別ガチャ（全6種）</span>
+    </div>
+    <div class="currency-group">
+      <div class="currency-pill medal">🧬 <span class="sync-medals">0</span> メダル</div>
+    </div>
+  </header>
+  <div class="scroll-body">
+    <div class="container-max">
+      <div class="gacha-tabs" id="gachaTabsBar"></div>
+      <div id="gachaShowcaseContainer"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 6. メニュー画面（選択ハブ → 図鑑・遊び方・設定） ==================== -->
+<section id="screen-menu" class="screen">
+  <header class="app-header">
+    <div class="header-left">
+      <button class="btn-back" id="menuBackBtn" onclick="handleMenuBack()">⬅️ ホーム</button>
+      <span class="header-title" id="menuHeaderTitle">⚙️ メニュー</span>
+    </div>
+    <div class="currency-group">
+      <div class="currency-pill">⚡ <span class="sync-atp">0</span></div>
+      <div class="currency-pill medal">🧬 <span class="sync-medals">0</span></div>
+    </div>
+  </header>
+  <div class="scroll-body">
+    <div class="container-max">
+      <div id="menuTabContent"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 7. 横型バトル画面 ==================== -->
+<section id="screen-battle" class="screen">
+  <header class="battle-top-bar">
+    <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+      <button class="hud-btn" onclick="retreatBattle()">⬅️ 撤退</button>
+      <span style="font-size:0.78rem; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="battleStageName">STAGE</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:6px;">
+      <button id="speedBtn" class="hud-btn" onclick="toggleSpeed()">⏩ 1x</button>
+      <button id="battleSoundBtn" class="hud-btn" onclick="toggleSound()">🔊</button>
+      <div class="atp-display-pill">⚡ <span id="atpText">0 / 1000</span></div>
+    </div>
+  </header>
+
+  <div class="battle-stage-wrap">
+    <div class="portrait-hint">📱 横画面にするとさらに遊びやすいです</div>
+    <div id="bossBanner" class="boss-banner">⚠️ WARNING!! ボス病原体出現！</div>
+    <canvas id="battleCanvas" width="1100" height="460"></canvas>
+  </div>
+
+  <footer class="battle-deck">
+    <button id="btnAtpUpgrade" class="special-btn" onclick="upgradeAtp()">
+      <div class="special-icon">⚡</div>
+      <div class="special-title" id="atpLvLabel">働き細胞 Lv.1</div>
+      <div class="special-sub" id="atpUpCostLabel">120</div>
+    </button>
+
+    <div class="unit-slots" id="unitSlotsContainer"></div>
+
+    <button id="btnCannon" class="special-btn" onclick="fireCannon()" disabled>
+      <div id="cannonFill" class="special-fill" style="height:0%;"></div>
+      <div class="special-icon">💥</div>
+      <div class="special-title">免疫ビーム</div>
+      <div class="special-sub" id="cannonPctLabel">0%</div>
+    </button>
+  </footer>
+</section>
+
+<!-- ==================== モーダル（バトル結果 / ガチャ結果） ==================== -->
+<div id="resultModal" class="modal-overlay">
+  <div class="modal-card" id="resultCard">
+    <div style="font-size:1.65rem; font-weight:900;" id="resultTitle">VICTORY!</div>
+    <div style="background:rgba(2,6,23,0.55); border-radius:12px; padding:12px; font-size:0.84rem; line-height:1.7; color:#cbd5e1;" id="resultStats"></div>
+    <div class="result-actions">
+      <button class="btn-action btn-secondary" onclick="backToStages()">🗺️ ステージ一覧</button>
+      <button class="btn-action btn-primary" onclick="retryBattle()">🔄 もう一度</button>
+    </div>
+  </div>
+</div>
+
+<div id="gachaModal" class="modal-overlay" onclick="if(event.target===this) closeGachaModal()">
+  <div class="modal-card" style="max-width:560px; border-color:#a855f7;">
+    <div style="font-size:1.25rem; font-weight:900; color:#e9d5ff;" id="gachaModalTitle">🎊 ガチャ結果！</div>
+    <div class="gacha-result-grid" id="gachaResultGrid"></div>
+    <button class="btn-action btn-primary" onclick="closeGachaModal()">OK！</button>
+  </div>
+</div>
+
+<div id="stagePrepModal" class="modal-overlay" onclick="if(event.target===this) closeStagePrep()">
+  <div class="modal-card" style="max-width:540px; border-color:#38bdf8; text-align:left;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+      <div style="font-size:1.15rem; font-weight:900; color:#38bdf8;" id="prepStageTitle">STAGE</div>
+      <button class="btn-back" onclick="closeStagePrep()">✕</button>
+    </div>
+    <div style="font-size:0.78rem; color:#cbd5e1;" id="prepStageMeta"></div>
+
+    <div>
+      <div style="font-size:0.8rem; font-weight:900; color:#fda4af; margin-bottom:6px;">👾 出現する敵キャラ ＆ 属性</div>
+      <div id="prepEnemyList" style="display:flex; gap:8px; flex-wrap:wrap; background:rgba(2,6,23,0.55); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:10px;"></div>
+    </div>
+
+    <div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <span style="font-size:0.8rem; font-weight:900; color:#4ade80;">🛡️ 出撃編成を選択</span>
+        <button class="hud-btn" onclick="goFormationFromPrep()">✏️ 編成を編集</button>
+      </div>
+      <div id="prepPresetTabs" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;"></div>
+      <div id="prepDeckPreview" style="display:flex; gap:6px; flex-wrap:wrap; background:rgba(2,6,23,0.55); border:1px solid rgba(56,189,248,0.25); border-radius:12px; padding:8px;"></div>
+    </div>
+
+    <div class="result-actions">
+      <button class="btn-action btn-secondary" onclick="closeStagePrep()">キャンセル</button>
+      <button class="btn-action btn-primary" onclick="launchBattleFromPrep()">⚔️ この編成で出撃！</button>
+    </div>
+  </div>
+</div>
+
+<div id="adminModal" class="modal-overlay" onclick="if(event.target===this) closeAdminModal()">
+  <div class="modal-card" style="max-width:440px; border-color:#38bdf8;">
+    <div style="font-size:1.2rem; font-weight:900; color:#38bdf8;">🛠️ 管理者テストコンソール</div>
+    <div style="font-size:0.75rem; color:#94a3b8;">開発・バランス検証用のデバッグコマンドです</div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <button class="btn-action btn-primary" onclick="adminAddAtp(10000)">⚡ ATP +10,000 付与</button>
+      <button class="btn-action btn-primary" style="background:linear-gradient(135deg,#9333ea,#db2777);" onclick="adminAddMedals(100)">🧬 DNAメダル +100 付与</button>
+      <button class="btn-action btn-primary" style="background:linear-gradient(135deg,#0891b2,#06b6d4);" onclick="adminAddCores(20)">💎 進化コア +20 付与</button>
+      <button class="btn-action btn-primary" style="background:linear-gradient(135deg,#059669,#10b981);" onclick="adminUnlockAllUnits()">🧬 全20種族コンプリート（Lv.10）</button>
+      <button class="btn-action btn-primary" style="background:linear-gradient(135deg,#d97706,#f59e0b);" onclick="adminUnlockAllStages()">🔓 全ステージ解放</button>
+      <button class="btn-action btn-primary" style="background:linear-gradient(135deg,#0284c7,#0ea5e9);" onclick="adminMaxFacilities()">🏛️ バイオ研究所施設 MAX（Lv.20）</button>
+      <button class="btn-action btn-secondary" style="color:#fca5a5;" onclick="adminResetSave()">🗑️ セーブデータ初期化</button>
+    </div>
+    <button class="btn-action btn-secondary" onclick="closeAdminModal()">閉じる</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ============================================================================
+   1. 全20種族マスターデータ（写真・バイオ・ロジカ準拠 6役割分類）
+============================================================================ */
+const UNITS_MASTER = [
+  // 1. 🛡️ 低コスト壁・重装壁 (wall)
+  {
+    id: 'ecoli', name: '大腸菌', evo2: 'バイオコロニー菌', evo3: 'プラスミド・コリ', evo4: '組換え機動大腸菌', evo5: '超増殖神・オメガコリクローナー',
+    gachaCat: 'wall', roleLabel: '安価量産壁', rarity: 'N',
+    cost: 50, cd: 2.0, baseHp: 160, baseAtk: 18, range: 36, speed: 68, atkInterval: 1.0,
+    kb: 2, aoe: false, size: 22, color: '#22c55e', shape: 'ecoli',
+    desc: '低コスト＆高速生産で前線を支える基本の壁役！'
+  },
+  {
+    id: 'natto', name: '納豆菌', evo2: 'ねばねばポリグルタミン', evo3: '要塞芽胞バチルス', evo4: '不滅エンドスポア', evo5: '金剛不壊神・エターナルナットウ',
+    gachaCat: 'wall', roleLabel: '絶対芽胞タンク', rarity: 'R',
+    cost: 150, cd: 4.0, baseHp: 560, baseAtk: 24, range: 38, speed: 40, atkInterval: 1.35,
+    kb: 1, aoe: false, size: 28, color: '#d97706', shape: 'natto',
+    desc: '移動は遅いが超硬い！芽胞の守りで前線を鉄壁ガード。'
+  },
+  {
+    id: 'diatom', name: 'ケイソウ', evo2: 'アーマー珪藻', evo3: 'フォートレス・シリカ', evo4: 'イージス・クリスタル', evo5: '絶対要塞・ダイヤシリカ',
+    gachaCat: 'wall', roleLabel: 'ガラス重戦車壁', rarity: 'SR',
+    cost: 280, cd: 5.5, baseHp: 820, baseAtk: 46, range: 42, speed: 36, atkInterval: 1.45,
+    kb: 2, aoe: true, size: 31, color: '#f59e0b', shape: 'shell',
+    desc: '二酸化ケイ素のガラス殻を持つ重装要塞。範囲押し返しが可能！'
+  },
+
+  // 2. ⚡ 高速・特攻 (speed)
+  {
+    id: 'neuron', name: 'ニューロン', evo2: 'シナプス伝達球', evo3: 'ミエリン・パルス', evo4: '活動電位スパーク', evo5: '神速電網・インフィニティシナプス',
+    gachaCat: 'speed', roleLabel: '超神速特攻', rarity: 'SR',
+    cost: 450, cd: 5.8, baseHp: 290, baseAtk: 130, range: 52, speed: 160, atkInterval: 0.85,
+    kb: 2, aoe: false, size: 28, color: '#eab308', shape: 'neuron',
+    desc: '跳躍伝導で電光石火の突撃！敵前線へ一瞬で斬り込む。'
+  },
+  {
+    id: 'neutrophil', name: '好中球', evo2: 'ドリル・ニュートロ', evo3: 'ターボジェット好中球', evo4: '音速機影ニュートロ', evo5: '光速神風・メテオニュートロ',
+    gachaCat: 'speed', roleLabel: 'スピード突撃', rarity: 'R',
+    cost: 320, cd: 4.2, baseHp: 260, baseAtk: 88, range: 44, speed: 130, atkInterval: 0.78,
+    kb: 3, aoe: false, size: 25, color: '#059669', shape: 'ciliate',
+    desc: '感染現場へ真っ先に急行する白血球の突撃隊長！連撃が速い。'
+  },
+
+  // 3. ⚔️ 近接バランス・火力 (melee)
+  {
+    id: 'ciliate', name: 'ゾウリムシ', evo2: 'マッハゾウリムシ', evo3: 'ソニック・シリア', evo4: 'ハイパー・ボルテックス', evo5: '神速皇・エクストリームシリア',
+    gachaCat: 'melee', roleLabel: '近接バランス', rarity: 'N',
+    cost: 240, cd: 3.5, baseHp: 320, baseAtk: 60, range: 48, speed: 78, atkInterval: 0.95,
+    kb: 3, aoe: false, size: 26, color: '#0ea5e9', shape: 'ciliate',
+    desc: 'バランスが良く扱いやすい近接アタッカー。'
+  },
+  {
+    id: 'amoeba', name: 'アメーバ', evo2: 'メタモルアメーバ', evo3: 'カオス・プロトプラズム', evo4: 'アビス・スライム', evo5: '万象起源・ウロボロスゾル',
+    gachaCat: 'melee', roleLabel: '反射＆万能', rarity: 'R',
+    cost: 360, cd: 4.8, baseHp: 440, baseAtk: 74, range: 46, speed: 62, atkInterval: 1.05,
+    kb: 2, aoe: false, size: 27, color: '#8b5cf6', shape: 'blob',
+    desc: '安定した耐久と火力を併せ持つ万能原生生物。'
+  },
+  {
+    id: 'killer_t', name: 'キラーT細胞', evo2: 'ストライクT', evo3: 'デュアルブレードT', evo4: '殲滅機将キラーT', evo5: '殲滅裁定神・ラグナロクT',
+    gachaCat: 'melee', roleLabel: '超高火力単体', rarity: 'SR',
+    cost: 580, cd: 7.2, baseHp: 400, baseAtk: 205, range: 56, speed: 86, atkInterval: 1.2,
+    kb: 3, aoe: false, size: 29, color: '#dc2626', shape: 'star',
+    desc: '異物を直接撃滅する処刑部隊！単体火力が極めて高い。'
+  },
+  {
+    id: 'nk_cell', name: 'NK細胞', evo2: 'シャドウクローNK', evo3: 'ナイトストーカー', evo4: 'ダークリーパーNK', evo5: '死神影皇・シャドウナチュラル',
+    gachaCat: 'melee', roleLabel: '会心アサシン', rarity: 'UR',
+    cost: 620, cd: 7.5, baseHp: 370, baseAtk: 168, range: 54, speed: 105, atkInterval: 0.9,
+    kb: 3, aoe: false, size: 27, color: '#7c3aed', shape: 'star', special: 'crit',
+    desc: '30%の確率で2倍の会心の一撃を叩き込む孤高の暗殺者！'
+  },
+
+  // 4. 🏹 中・遠距離・範囲 (range)
+  {
+    id: 'phage', name: 'ファージ', evo2: 'ベクターファージ', evo3: 'オメガ・カプシド', evo4: 'サイバー・インフェクター', evo5: '終焉機神・ラグナロクファージ',
+    gachaCat: 'range', roleLabel: '中距離範囲', rarity: 'R',
+    cost: 650, cd: 7.5, baseHp: 360, baseAtk: 155, range: 175, speed: 56, atkInterval: 1.75,
+    kb: 3, aoe: true, size: 30, color: '#ec4899', shape: 'phage',
+    desc: '中距離から複数体をまとめて撃ち抜く主力シューター！'
+  },
+  {
+    id: 'b_cell', name: 'B細胞', evo2: 'ツインキャノンB', evo3: '形質ガトリングB', evo4: 'アームド要塞B細胞', evo5: '無限抗体神・セラフィムB',
+    gachaCat: 'range', roleLabel: '遠距離ガトリング', rarity: 'SR',
+    cost: 760, cd: 8.5, baseHp: 320, baseAtk: 90, range: 235, speed: 50, atkInterval: 0.72,
+    kb: 3, aoe: false, size: 29, color: '#db2777', shape: 'shell',
+    desc: '超射程から抗体ミサイルを高速連射する生体砲台！'
+  },
+  {
+    id: 'euglena', name: 'ミドリムシ', evo2: 'ソーラーミドリムシ', evo3: 'エメラルド・クロロ', evo4: 'フォトン・プラント', evo5: '太陽神・ヘリオクロロフィル',
+    gachaCat: 'range', roleLabel: '中距離範囲', rarity: 'R',
+    cost: 490, cd: 6.0, baseHp: 360, baseAtk: 106, range: 145, speed: 66, atkInterval: 1.4,
+    kb: 3, aoe: true, size: 27, color: '#10b981', shape: 'leaf',
+    desc: 'コスパの良い中距離範囲アタッカー。雑魚の一掃に最適！'
+  },
+  {
+    id: 'mast_cell', name: 'マスト細胞', evo2: 'ヒスタミンバルーン', evo3: 'ブラスト・マスト', evo4: 'フォートレス・マイン', evo5: '終末炎熱神・スーパーノヴァマスト',
+    gachaCat: 'range', roleLabel: '爆破範囲', rarity: 'SR',
+    cost: 820, cd: 9.5, baseHp: 490, baseAtk: 245, range: 135, speed: 46, atkInterval: 2.35,
+    kb: 2, aoe: true, size: 33, color: '#e11d48', shape: 'bear',
+    desc: 'ヒスタミン大爆発で敵集団を一気に吹き飛ばす生体爆弾！'
+  },
+
+  // 5. ✨ 支援・妨害・特殊 (support)
+  {
+    id: 'cyanobacteria', name: 'シアノバクテリア', evo2: 'ストロマトライト', evo3: 'オキシゲン・シアノ', evo4: '太古の地球呼吸神', evo5: '創世始祖・ガイアシアノバクテリア',
+    gachaCat: 'support', roleLabel: 'ATP生成UP', rarity: 'R',
+    cost: 300, cd: 7.0, baseHp: 330, baseAtk: 40, range: 120, speed: 55, atkInterval: 1.4,
+    kb: 2, aoe: false, size: 25, color: '#06b6d4', shape: 'ecoli', special: 'atp_gen',
+    desc: '場にいる間、光合成で味方のATP増加速度を+12/秒ブースト！'
+  },
+  {
+    id: 'helper_t', name: 'ヘルパーT細胞', evo2: 'サイトカインT', evo3: 'コマンダー・ヘルパー', evo4: 'アークエンジェルT', evo5: '救済聖母・エンペラーヘルパー',
+    gachaCat: 'support', roleLabel: '味方回復支援', rarity: 'SR',
+    cost: 520, cd: 8.5, baseHp: 410, baseAtk: 64, range: 150, speed: 62, atkInterval: 1.6,
+    kb: 2, aoe: false, size: 27, color: '#0d9488', shape: 'leaf', special: 'heal',
+    desc: '攻撃ごとに前線の味方全員のHPを少し回復する司令塔！'
+  },
+  {
+    id: 'dendritic', name: '樹状細胞', evo2: 'ブランチ・デンクリット', evo3: '千里眼デンクリット', evo4: 'ユグドラシル・ノード', evo5: '全知観測神・ユグドラ樹状神',
+    gachaCat: 'support', roleLabel: '減速デバフ', rarity: 'R',
+    cost: 420, cd: 6.8, baseHp: 380, baseAtk: 70, range: 160, speed: 64, atkInterval: 1.5,
+    kb: 2, aoe: true, size: 27, color: '#0284c7', shape: 'neuron', special: 'slow',
+    desc: '攻撃が当たった敵の移動速度を2秒間50%低下させる！'
+  },
+  {
+    id: 'memory_cell', name: 'メモリー細胞', evo2: 'レコードセル', evo3: 'アーカイブ・ガーディアン', evo4: 'クロノス・コア', evo5: '時空記憶神・クロノスメモリー',
+    gachaCat: 'support', roleLabel: '堅実カウンター', rarity: 'R',
+    cost: 460, cd: 6.2, baseHp: 600, baseAtk: 98, range: 52, speed: 60, atkInterval: 1.25,
+    kb: 2, aoe: false, size: 28, color: '#4f46e5', shape: 'blob',
+    desc: '高い耐久と安定した反撃火力で戦線をキープする記録者。'
+  },
+  {
+    id: 'influenza', name: 'インフルエンザ', evo2: 'ヘマグルチニン', evo3: 'ミューテーション・フルー', evo4: 'パンデミック・シャドウ', evo5: '終焉災厄・インフェルノフルー',
+    gachaCat: 'support', roleLabel: '状態異常・毒', rarity: 'SR',
+    cost: 540, cd: 7.0, baseHp: 280, baseAtk: 90, range: 110, speed: 88, atkInterval: 1.1,
+    kb: 3, aoe: true, size: 26, color: '#9333ea', shape: 'star', special: 'poison',
+    desc: '当たった敵を感染（毒）状態にし、じわじわ継続ダメージを与える！'
+  },
+
+  // 6. 👑 大型フィニッシャー (finisher)
+  {
+    id: 'macrophage', name: 'マクロファージ', evo2: '大食マクロファージ', evo3: '装甲重兵ファージ', evo4: '剛力タイタンファージ', evo5: '深淵貪食神・メガロファージ',
+    gachaCat: 'finisher', roleLabel: '超耐久＆捕食回復', rarity: 'UR',
+    cost: 1200, cd: 13.0, baseHp: 1450, baseAtk: 225, range: 76, speed: 42, atkInterval: 1.85,
+    kb: 3, aoe: true, size: 42, color: '#f97316', shape: 'macrophage', special: 'lifesteal',
+    desc: '圧倒的体力の大型タンク！攻撃時に与えたダメージの20%自己回復。'
+  },
+  {
+    id: 'tardigrade', name: 'クマムシ', evo2: 'アーマークマムシ', evo3: 'コスモ・タルディグラダ', evo4: 'ギャラクシー・モスピッグ', evo5: '時空超越神・エターナルクマムシ',
+    gachaCat: 'finisher', roleLabel: '極限耐久・HP1耐え', rarity: 'UR',
+    cost: 1350, cd: 15.0, baseHp: 1650, baseAtk: 260, range: 72, speed: 48, atkInterval: 1.95,
+    kb: 2, aoe: true, size: 42, color: '#eab308', shape: 'bear', special: 'endure',
+    desc: '最強の極限生物！致死ダメージを受けても1度だけHP1で必ず耐える。'
+  }
+];
+
+const GACHA_BANNERS = [
+  { id: 'wall', tab: '🛡️ 壁', title: '🛡️ 低コスト壁・重装壁ガチャ', cost1: 10, cost5: 45, bg: 'linear-gradient(145deg, rgba(22,101,52,0.55), rgba(15,23,42,0.95))', border: '#22c55e', desc: '前線を支える壁役が確定排出！序盤の安定に必須。' },
+  { id: 'speed', tab: '⚡ 高速', title: '⚡ 高速・特攻ガチャ', cost1: 10, cost5: 45, bg: 'linear-gradient(145deg, rgba(161,98,7,0.55), rgba(15,23,42,0.95))', border: '#eab308', desc: '超スピードで一気に前線へ斬り込む特攻ユニット！' },
+  { id: 'melee', tab: '⚔️ 近接', title: '⚔️ 近接バランス・火力ガチャ', cost1: 10, cost5: 45, bg: 'linear-gradient(145deg, rgba(153,27,27,0.55), rgba(15,23,42,0.95))', border: '#ef4444', desc: '中核を担う近接アタッカー＆暗殺者が勢揃い！' },
+  { id: 'range', tab: '🏹 遠距離', title: '🏹 中・遠距離・範囲ガチャ', cost1: 10, cost5: 45, bg: 'linear-gradient(145deg, rgba(157,23,77,0.55), rgba(15,23,42,0.95))', border: '#ec4899', desc: '後ろから敵をまとめて撃ち抜く砲台＆範囲アタッカー！' },
+  { id: 'support', tab: '✨ 支援', title: '✨ 支援・妨害・特殊ガチャ', cost1: 10, cost5: 45, bg: 'linear-gradient(145deg, rgba(14,116,144,0.55), rgba(15,23,42,0.95))', border: '#06b6d4', desc: 'ATP加速・回復・減速・毒など戦術の幅を広げる特殊枠！' },
+  { id: 'finisher', tab: '👑 大型', title: '👑 大型フィニッシャーガチャ', cost1: 15, cost5: 68, bg: 'linear-gradient(145deg, rgba(107,33,168,0.65), rgba(15,23,42,0.95))', border: '#c084fc', desc: '戦況を一撃でひっくり返す超大型フィニッシャー限定！' }
+];
+
+const TRAITS_MASTER = {
+  bacteria: { id: 'bacteria', name: '細菌', icon: '🔴', color: '#ef4444' },
+  virus:    { id: 'virus',    name: 'ウイルス', icon: '🟣', color: '#a855f7' },
+  fungus:   { id: 'fungus',   name: '真菌', icon: '🟢', color: '#22c55e' },
+  mutant:   { id: 'mutant',   name: '変異種', icon: '🟡', color: '#eab308' },
+  superbug: { id: 'superbug', name: '耐性菌', icon: '⚫', color: '#94a3b8' }
+};
+const TRAIT_KEYS = Object.keys(TRAITS_MASTER);
+
+function rollRandomTrait() {
+  return TRAIT_KEYS[Math.floor(Math.random() * TRAIT_KEYS.length)];
+}
+
+function formatTraitsText(traits) {
+  const list = Array.isArray(traits) && traits.length > 0 ? traits : ['bacteria'];
+  return list.map(k => {
+    const t = TRAITS_MASTER[k];
+    return t ? `${t.icon}${t.name}` : '';
+  }).filter(Boolean).join(' ');
+}
+
+const ENEMY_TYPES = {
+  slime:    { id: 'slime',    name: '雑菌スライム',       trait: 'bacteria', hp: 150,  atk: 22,  range: 36, speed: 56,  atkInterval: 1.15, kb: 2, aoe: false, size: 22, reward: 35,  color: '#ef4444', shape: 'slime' },
+  virus:    { id: 'virus',    name: 'スパイクウイルス',   trait: 'virus',    hp: 250,  atk: 46,  range: 45, speed: 95,  atkInterval: 0.85, kb: 3, aoe: false, size: 25, reward: 65,  color: '#a855f7', shape: 'virus' },
+  fungus:   { id: 'fungus',   name: 'カビ胞子スライム',   trait: 'fungus',   hp: 420,  atk: 36,  range: 40, speed: 44,  atkInterval: 1.35, kb: 2, aoe: false, size: 27, reward: 85,  color: '#16a34a', shape: 'slime' },
+  coccus:   { id: 'coccus',   name: '変異球菌タンク',     trait: 'bacteria', hp: 820,  atk: 68,  range: 48, speed: 36,  atkInterval: 1.55, kb: 2, aoe: true,  size: 32, reward: 130, color: '#dc2626', shape: 'coccus' },
+  mutant:   { id: 'mutant',   name: '突然変異体',         trait: 'mutant',   hp: 580,  atk: 110, range: 54, speed: 105, atkInterval: 1.0,  kb: 3, aoe: false, size: 28, reward: 150, color: '#ca8a04', shape: 'virus' },
+  mycelium: { id: 'mycelium', name: '巨菌糸ベヒモス',     trait: 'fungus',   hp: 1200, atk: 88,  range: 54, speed: 34,  atkInterval: 1.65, kb: 2, aoe: true,  size: 36, reward: 190, color: '#15803d', shape: 'shell' },
+  superbug: { id: 'superbug', name: '耐性スーパーバグ',   trait: 'superbug', hp: 960,  atk: 92,  range: 50, speed: 52,  atkInterval: 1.25, kb: 2, aoe: false, size: 30, reward: 170, color: '#64748b', shape: 'coccus' },
+  boss:     { id: 'boss',     name: 'パンデミック・ロード', trait: 'superbug', hp: 3600, atk: 195, range: 88, speed: 32, atkInterval: 2.1, kb: 4, aoe: true,  size: 54, reward: 500, color: '#475569', shape: 'boss' }
+};
+
+/* ストーリー生成ヘルパー（各章10ステージ・全10章100ステージ） */
+function buildChapterStages(chNum, baseHpStart, baseHpStep, multStart, multStep, finalMedal, names, theme) {
+  return names.map((title, idx) => {
+    const num = idx + 1;
+    const id = `${chNum}-${num}`;
+    const isFinal = num === 10;
+    const isMidBoss = num === 5 || num === 8;
+    const baseHp = Math.round(baseHpStart + idx * baseHpStep + (isFinal ? baseHpStep * 1.5 : 0));
+    const mult = Number((multStart + idx * multStep).toFixed(2));
+    const rewardAtp = Math.round((220 + (chNum - 1) * 420) + idx * (65 + chNum * 35) + (isFinal ? 500 : 0));
+    const rewardCores = isFinal ? Math.min(10, chNum + 1) : (isMidBoss ? 1 : 0);
+    const loopCores = isFinal ? Math.min(5, Math.max(1, Math.floor(chNum / 2))) : 0;
+
+    let waves, loops, bossType;
+    if (theme) {
+      waves = [
+        { t: 1.5, type: theme.wave1, count: 3 + Math.floor(num / 3), iv: Math.max(0.7, 1.3 - idx * 0.04) },
+        { t: 9.0, type: theme.wave2, count: 2 + Math.floor(num / 4), iv: 1.9 },
+        { t: 16.5, type: num % 2 === 0 ? theme.wave3 : theme.wave2, count: 3 + Math.floor(num / 2), iv: 1.05 }
+      ];
+      loops = [
+        { type: theme.loop1, delay: Math.max(1.7, 2.7 - idx * 0.08) },
+        { type: theme.loop2, delay: Math.max(2.2, 4.2 - idx * 0.14) },
+        { type: theme.loop3, delay: Math.max(4.4, 7.2 - idx * 0.22) }
+      ];
+      bossType = isFinal ? (theme.finalBoss || 'boss') : (theme.midBoss || 'superbug');
+    } else {
+      waves = [
+        { t: 1.8, type: chNum >= 3 ? 'virus' : 'slime', count: 2 + Math.floor(num / 3), iv: Math.max(0.8, 2.2 - chNum * 0.25) },
+        { t: 10.0, type: chNum >= 3 ? 'mutant' : (num >= 4 || chNum >= 2 ? 'coccus' : 'virus'), count: 1 + Math.floor((num + chNum) / 4), iv: 2.5 }
+      ];
+      if (num >= 6 || chNum >= 2) {
+        waves.push({ t: 18.0, type: chNum >= 2 && num % 2 === 0 ? 'fungus' : 'virus', count: 3 + Math.floor(num / 2), iv: 1.1 });
+      }
+      loops = [
+        { type: chNum >= 2 && num % 2 === 1 ? 'fungus' : 'slime', delay: Math.max(1.8, 4.4 - chNum * 0.45 - idx * 0.1) },
+        { type: 'virus', delay: Math.max(2.2, 8.5 - chNum * 0.9 - idx * 0.25) }
+      ];
+      if (num >= 4 || chNum >= 2) {
+        loops.push({ type: chNum >= 4 && num % 2 === 0 ? 'mutant' : 'coccus', delay: Math.max(4.8, 13.5 - chNum * 1.4 - idx * 0.35) });
+      }
+      bossType = isFinal ? 'boss' : (isMidBoss && chNum >= 2 ? 'boss' : 'coccus');
+    }
+
+    return {
+      id,
+      name: `${id}：${title}`,
+      baseHp,
+      rewardAtp,
+      rewardMedal: isFinal ? finalMedal : 0,
+      rewardCores,
+      loopCores,
+      mult,
+      bossRatio: isFinal ? 0.78 : (isMidBoss ? 0.62 : 0),
+      bossType,
+      bossCount: isFinal ? Math.min(3, Math.ceil(chNum / 2)) : (isMidBoss ? 2 : 0),
+      waves,
+      loops
+    };
+  });
+}
+
+const CHAPTERS = [
+  {
+    id: 'ch1', title: '第1章：シャーレ培養編', sub: '基本の押し引きを学ぼう（1-1 〜 1-10）',
+    stages: buildChapterStages(1, 1000, 320, 0.78, 0.055, 25, [
+      'はじめての培養', '雑菌の群れ', '赤色スパイク襲来', '培養液の攻防', '重装球菌の壁（中ボス）',
+      'ウイルス前線', '増殖の兆し', '双子の変異球菌（強敵）', '培養皿の決戦前夜', 'シャーレの王者（第1章最終）'
+    ])
+  },
+  {
+    id: 'ch2', title: '第2章：体内免疫戦線', sub: 'スピードと物量の激戦（2-1 〜 2-10）',
+    stages: buildChapterStages(2, 4200, 460, 1.30, 0.06, 35, [
+      '毛細血管の攻防', '変異株ラッシュ', '赤血球ハイウェイ', '白血球の防衛線', 'リンパ節攻防戦（中ボス）',
+      '粘膜の突破口', '高熱反応エリア', '抗体包囲網（強敵）', '中枢への進軍', 'パンデミック中枢（第2章最終）'
+    ])
+  },
+  {
+    id: 'ch3', title: '第3章：極限バイオ領域', sub: '限界突破Lv.21〜30の激戦（3-1 〜 3-10）',
+    stages: buildChapterStages(3, 8800, 650, 1.88, 0.065, 45, [
+      '深淵のコロニー', '耐性菌の要塞', '暴走する核', '遺伝子変異嵐', '極限環境試験区（中ボス）',
+      'バイオハザード地帯', 'パンデミック・ゼロ', '神話への境界線（強敵）', '終焉の前触れ', '極限覇者オメガ（第3章最終）'
+    ])
+  },
+  {
+    id: 'ch4', title: '第4章：遺伝子改変・変異域', sub: '第4形態覚醒が輝く高難度（4-1 〜 4-10）',
+    stages: buildChapterStages(4, 15500, 850, 2.52, 0.075, 55, [
+      '変異ゲノム回廊', '逆転写の罠', 'プリオンの霧', 'CRISPR防衛網', 'キメラ細胞群（中ボス）',
+      '暴走テロメア', '無限分裂ループ', '暗黒リボソーム（強敵）', '最終変異プロトコル', '変異神ラグナロク（第4章最終）'
+    ])
+  },
+  {
+    id: 'ch5', title: '第5章：神話起源・終焉領域', sub: '第5形態（Lv.50）で挑む決戦（5-1 〜 5-10）',
+    stages: buildChapterStages(5, 24500, 1100, 3.25, 0.085, 80, [
+      '起源の扉', '太古のパンデミック', 'ミトコンドリアの反乱', '絶対零度耐性区', '創世の門番（中ボス）',
+      '神話細胞回廊', '時空超越領域', '万象の終着点（強敵）', 'オリジン・コア前哨', '創世終焉神オメガ（第5章最終）'
+    ])
+  },
+  {
+    id: 'ch6', title: '第6章：深海・極限菌域', sub: '🟢真菌・🔴細菌中心の高難度海域（6-1 〜 6-10）',
+    stages: buildChapterStages(6, 35000, 1300, 4.10, 0.065, 95, [
+      '深海熱水噴出孔', '高圧胞子の壁', '暗黒菌糸ネットワーク', '硫黄細菌の巣窟', '深海巨菌ベヒモス（中ボス）',
+      'マリンスノー感染域', '超深海プレッシャー', '双璧の重装球菌（強敵）', '海溝コア最深部', '深淵菌皇レヴィアタン（第6章最終）'
+    ], { wave1: 'fungus', wave2: 'mycelium', wave3: 'coccus', loop1: 'fungus', loop2: 'slime', loop3: 'mycelium', midBoss: 'mycelium', finalBoss: 'boss' })
+  },
+  {
+    id: 'ch7', title: '第7章：電脳ナノウイルス網', sub: '🟣ウイルス・🟡変異種が高速侵攻（7-1 〜 7-10）',
+    stages: buildChapterStages(7, 47000, 1500, 4.75, 0.065, 110, [
+      'ナノゲート突破', 'スパイク・ストーム', '神経シナプスハック', '自己複製プロトコル', '電脳変異体α（中ボス）',
+      '光速感染ルート', 'オーバークロック株', '双子の変異コア（強敵）', 'サイバー免疫中枢', '電脳災厄ゼロデイ（第7章最終）'
+    ], { wave1: 'virus', wave2: 'mutant', wave3: 'virus', loop1: 'virus', loop2: 'mutant', loop3: 'virus', midBoss: 'mutant', finalBoss: 'boss' })
+  },
+  {
+    id: 'ch8', title: '第8章：抗生剤・耐性要塞', sub: '⚫耐性菌・🔴細菌の鉄壁防衛線（8-1 〜 8-10）',
+    stages: buildChapterStages(8, 61000, 1700, 5.40, 0.07, 130, [
+      'ペニシリン跡地', '耐性バリア展開', '多剤耐性バンカー', 'バイオフィルム城壁', 'スーパーバグ司令官（中ボス）',
+      '薬剤無効化エリア', '重装球菌大隊', '不滅の耐性双壁（強敵）', '絶対防衛リアクター', '鉄壁耐性王MRSA（第8章最終）'
+    ], { wave1: 'coccus', wave2: 'superbug', wave3: 'slime', loop1: 'slime', loop2: 'superbug', loop3: 'coccus', midBoss: 'superbug', finalBoss: 'boss' })
+  },
+  {
+    id: 'ch9', title: '第9章：量子ゲノム変異界', sub: '🟡変異種・🟢真菌・🟣ウイルス混成（9-1 〜 9-10）',
+    stages: buildChapterStages(9, 77000, 1900, 6.10, 0.07, 150, [
+      '量子ゆらぎ培養', '二重らせん迷宮', 'エピジェネティクス嵐', '確率的突然変異', '量子キメラ体（中ボス）',
+      '超次元胞子拡散', 'エンタングル感染', '破滅の三重変異（強敵）', '事象の地平線', '量子超越神クロノス（第9章最終）'
+    ], { wave1: 'mutant', wave2: 'mycelium', wave3: 'virus', loop1: 'virus', loop2: 'mutant', loop3: 'superbug', midBoss: 'superbug', finalBoss: 'boss' })
+  },
+  {
+    id: 'ch10', title: '第10章：宇宙パンスペルミア', sub: '全5属性総力戦・究極の最終章（10-1 〜 10-10）',
+    stages: buildChapterStages(10, 95000, 2200, 6.85, 0.075, 200, [
+      '成層圏外バイオ', '隕石胚胞の襲来', '太陽風耐性コロニー', '無重力パンデミック', '星間耐性巨神（中ボス）',
+      '銀河系外ウイルス群', '暗黒物質培養帯', '万象の試練・極（強敵）', '生命起源の玉座前', '宇宙創世神パンスペルミア（第10章最終）'
+    ], { wave1: 'superbug', wave2: 'mutant', wave3: 'mycelium', loop1: 'virus', loop2: 'mycelium', loop3: 'superbug', midBoss: 'boss', finalBoss: 'boss' })
+  }
+];
+
+/* 💎 レベル上限解放ステージ（段階的上限解放：20 -> 30 -> 40 -> 50） */
+const CORE_STAGES = [
+  { id: 'core-1', name: '💎 初級：芽胞の試練（クリアで上限Lv.30解放！）', unlockCap: 30, reqStage: null,
+    baseHp: 4600, rewardAtp: 650, rewardMedal: 0, rewardCores: 3, loopCores: 1, mult: 1.52, bossRatio: 0.7, bossType: 'boss', bossCount: 1,
+    waves: [{ t: 1.5, type: 'virus', count: 4, iv: 1.1 }, { t: 10, type: 'coccus', count: 2, iv: 2.5 }],
+    loops: [{ type: 'slime', delay: 2.6 }, { type: 'virus', delay: 4.0 }, { type: 'coccus', delay: 9.0 }] },
+  { id: 'core-2', name: '💎 中級：免疫突破演習（クリアで上限Lv.40解放！）', unlockCap: 40, reqStage: 'core-1',
+    baseHp: 9000, rewardAtp: 1200, rewardMedal: 0, rewardCores: 4, loopCores: 2, mult: 2.08, bossRatio: 0.75, bossType: 'boss', bossCount: 2,
+    waves: [{ t: 1.2, type: 'coccus', count: 2, iv: 2.2 }, { t: 9, type: 'virus', count: 6, iv: 0.85 }],
+    loops: [{ type: 'virus', delay: 3.1 }, { type: 'coccus', delay: 6.8 }] },
+  { id: 'core-3', name: '💎 上級：パンデミック深層（クリアで上限Lv.50解放！）', unlockCap: 50, reqStage: 'core-2',
+    baseHp: 15500, rewardAtp: 2200, rewardMedal: 0, rewardCores: 6, loopCores: 3, mult: 2.68, bossRatio: 0.82, bossType: 'boss', bossCount: 3,
+    waves: [{ t: 1.2, type: 'coccus', count: 3, iv: 1.8 }, { t: 8, type: 'virus', count: 7, iv: 0.7 }],
+    loops: [{ type: 'virus', delay: 2.4 }, { type: 'coccus', delay: 5.0 }] }
+];
+
+/* ⚡ 特別ステージ（ATP大量培養 ＆ ボスラッシュ） */
+const SPECIAL_STAGES = [
+  { id: 'sp-atp1', name: '⚡ ATP大量培養ラボ（初級）', baseHp: 2200, rewardAtp: 1400, rewardMedal: 0, rewardCores: 0, loopCores: 0, mult: 0.9, bossRatio: 0,
+    waves: [{ t: 1.5, type: 'slime', count: 6, iv: 1.0 }, { t: 12, type: 'slime', count: 8, iv: 0.9 }],
+    loops: [{ type: 'slime', delay: 2.2 }] },
+  { id: 'sp-atp2', name: '⚡ ATP黄金培養ラボ（中級）', baseHp: 5400, rewardAtp: 3200, rewardMedal: 0, rewardCores: 0, loopCores: 0, mult: 1.45, bossRatio: 0.6, bossType: 'coccus', bossCount: 2,
+    waves: [{ t: 1.5, type: 'virus', count: 5, iv: 1.0 }, { t: 11, type: 'coccus', count: 2, iv: 2.5 }],
+    loops: [{ type: 'virus', delay: 3.2 }, { type: 'coccus', delay: 8.5 }] },
+  { id: 'sp-atp3', name: '⚡ ATP超絶培養ラボ（上級）', baseHp: 11000, rewardAtp: 6500, rewardMedal: 0, rewardCores: 0, loopCores: 0, mult: 2.15, bossRatio: 0.75, bossType: 'boss', bossCount: 2,
+    waves: [{ t: 1.2, type: 'virus', count: 6, iv: 0.8 }, { t: 10, type: 'coccus', count: 3, iv: 2.0 }],
+    loops: [{ type: 'virus', delay: 2.6 }, { type: 'coccus', delay: 6.2 }] },
+  { id: 'sp-boss', name: '👑 特別高難度：極限ボスラッシュ', baseHp: 22000, rewardAtp: 10000, rewardMedal: 0, rewardCores: 0, loopCores: 0, mult: 2.85, bossRatio: 0.88, bossType: 'boss', bossCount: 3,
+    waves: [{ t: 1.5, type: 'coccus', count: 4, iv: 1.8 }, { t: 8, type: 'boss', count: 1, iv: 0 }, { t: 16, type: 'virus', count: 8, iv: 0.7 }],
+    loops: [{ type: 'virus', delay: 2.2 }, { type: 'coccus', delay: 4.8 }] }
+];
+
+function getAllStagesFlat() {
+  const list = [];
+  CHAPTERS.forEach(ch => ch.stages.forEach(st => list.push(st)));
+  CORE_STAGES.forEach(st => list.push(st));
+  SPECIAL_STAGES.forEach(st => list.push(st));
+  return list;
+}
+
+/* ============================================================================
+   2. セーブデータ & オーディオ
+============================================================================ */
+const SAVE_KEY = 'battle_logica_save_v1';
+let saveData = null;
+
+const RANKS_MASTER = {
+  MR: { order: 6, rate: 0.5, mult: 1.85, color: '#38bdf8', label: '🌌 MR' },
+  XR: { order: 5, rate: 1.5, mult: 1.62, color: '#e879f9', label: '🔮 XR' },
+  LR: { order: 4, rate: 3.0, mult: 1.45, color: '#fb7185', label: '👑 LR' },
+  UR: { order: 3, rate: 7.0, mult: 1.30, color: '#facc15', label: '🔥 UR' },
+  SR: { order: 2, rate: 18.0, mult: 1.18, color: '#c084fc', label: '🌟 SR' },
+  R:  { order: 1, rate: 30.0, mult: 1.08, color: '#60a5fa', label: '✨ R' },
+  N:  { order: 0, rate: 40.0, mult: 1.00, color: '#94a3b8', label: '🔹 N' }
+};
+
+function rollGachaRank() {
+  const r = Math.random() * 100;
+  let acc = 0;
+  for (const key of ['MR', 'XR', 'LR', 'UR', 'SR', 'R', 'N']) {
+    acc += RANKS_MASTER[key].rate;
+    if (r < acc) return key;
+  }
+  return 'N';
+}
+
+const MAX_PRESETS = 6;
+const PRESET_UNLOCK_COSTS = [0, 0, 500, 1200, 2500, 5000];
+
+function createDefaultSave() {
+  const starterDeck = ['ecoli', 'natto', 'ciliate', null, null, null, null, null, null, null];
+  return {
+    atp: 600,
+    medals: 50,
+    evoCores: 0,
+    owned: {
+      ecoli:   { lv: 1, plus: 0, cap: 20, rank: 'N', traits: ['bacteria'] },
+      natto:   { lv: 1, plus: 0, cap: 20, rank: 'R', traits: ['virus'] },
+      ciliate: { lv: 1, plus: 0, cap: 20, rank: 'N', traits: ['fungus'] }
+    },
+    presets: [
+      { name: '編成1', deck: [...starterDeck] },
+      { name: '編成2', deck: [...starterDeck] }
+    ],
+    activePreset: 0,
+    unlockedPresets: 2,
+    facilities: { atpRate: 1, baseHp: 1, cannon: 1 },
+    cleared: {}
+  };
+}
+
+function loadSave() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      saveData = Object.assign(createDefaultSave(), parsed);
+      // 旧セーブデータの deck -> presets 移行
+      if (!Array.isArray(saveData.presets) || saveData.presets.length < 2) {
+        const legacyDeck = Array.isArray(parsed.deck) && parsed.deck.length === 10
+          ? parsed.deck
+          : createDefaultSave().presets[0].deck;
+        saveData.presets = [
+          { name: '編成1', deck: [...legacyDeck] },
+          { name: '編成2', deck: [...legacyDeck] }
+        ];
+      }
+      saveData.unlockedPresets = Math.max(2, Math.min(MAX_PRESETS, saveData.unlockedPresets || 2));
+      saveData.activePreset = Math.max(0, Math.min(saveData.unlockedPresets - 1, saveData.activePreset || 0));
+      return;
+    }
+  } catch (e) {}
+  saveData = createDefaultSave();
+}
+
+function getActiveDeck() {
+  const idx = Math.max(0, Math.min(saveData.presets.length - 1, saveData.activePreset || 0));
+  return saveData.presets[idx].deck;
+}
+
+function persistSave() {
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
+  } catch (e) {}
+  syncCurrencyUI();
+}
+
+function resetSaveData() {
+  if (!confirm('セーブデータを初期状態に戻しますか？')) return;
+  saveData = createDefaultSave();
+  persistSave();
+  openMenuScreen();
+  showToast('セーブデータを初期化しました');
+}
+
+function getUnitDef(id) {
+  return UNITS_MASTER.find(u => u.id === id);
+}
+
+function getUnitComputedStats(id) {
+  const def = getUnitDef(id);
+  const ow = saveData.owned[id] || { lv: 1, plus: 0, cap: 20, rank: 'N', traits: ['bacteria'] };
+  const rankKey = ow.rank || def.rarity || 'N';
+  const rankInfo = RANKS_MASTER[rankKey] || RANKS_MASTER.N;
+  const traits = Array.isArray(ow.traits) && ow.traits.length > 0 ? ow.traits : [TRAIT_KEYS[id.length % TRAIT_KEYS.length]];
+  const mult = (1 + (ow.lv - 1) * 0.04 + (ow.plus || 0) * 0.02) * rankInfo.mult;
+  let dispName = def.name;
+  if (ow.lv >= 50) dispName = def.evo5 || def.evo3;
+  else if (ow.lv >= 40) dispName = def.evo4 || def.evo3;
+  else if (ow.lv >= 10) dispName = def.evo3;
+  else if (ow.lv >= 5) dispName = def.evo2;
+  return {
+    ...def,
+    lv: ow.lv,
+    plus: ow.plus || 0,
+    rank: rankKey,
+    rankInfo,
+    traits,
+    dispName,
+    hp: Math.round(def.baseHp * mult),
+    atk: Math.round(def.baseAtk * mult)
+  };
+}
+
+/* オーディオ */
+let audioCtx = null;
+let soundEnabled = true;
+
+function ensureAudio() {
+  if (!soundEnabled) return null;
+  if (!audioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) audioCtx = new AC();
+  }
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+  return audioCtx;
+}
+
+function playTone(freq, endFreq, dur, type = 'sine', vol = 0.08) {
+  const ctx = ensureAudio();
+  if (!ctx) return;
+  const now = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, now);
+  if (endFreq !== freq) osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq), now + dur);
+  gain.gain.setValueAtTime(vol, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.start(now); osc.stop(now + dur);
+}
+
+const SE = {
+  spawn: () => playTone(440, 720, 0.09, 'triangle', 0.07),
+  hit: () => playTone(180, 90, 0.05, 'square', 0.04),
+  kb: () => playTone(320, 140, 0.13, 'sawtooth', 0.06),
+  atpUp: () => { playTone(523, 659, 0.08, 'triangle', 0.08); setTimeout(() => playTone(784, 1046, 0.12, 'triangle', 0.08), 70); },
+  cannon: () => { playTone(900, 140, 0.45, 'sawtooth', 0.11); },
+  boss: () => { playTone(160, 120, 0.28, 'sawtooth', 0.10); setTimeout(() => playTone(160, 120, 0.32, 'sawtooth', 0.10), 200); },
+  win: () => [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => playTone(f, f, 0.16, 'triangle', 0.09), i * 95)),
+  lose: () => [392, 349, 311, 261].forEach((f, i) => setTimeout(() => playTone(f, f, 0.2, 'sawtooth', 0.07), i * 130))
+};
+
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  const m = document.getElementById('menuSoundBtn');
+  const b = document.getElementById('battleSoundBtn');
+  if (m) m.textContent = soundEnabled ? '🔊 SE: ON' : '🔇 SE: OFF';
+  if (b) b.textContent = soundEnabled ? '🔊' : '🔇';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ============================================================================
+   3. 画面遷移・ホーム・各サブ画面レンダリング
+============================================================================ */
+function switchScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function syncCurrencyUI() {
+  document.getElementById('homeAtp').textContent = saveData.atp.toLocaleString();
+  document.getElementById('homeMedals').textContent = saveData.medals.toLocaleString();
+  document.querySelectorAll('.sync-atp').forEach(el => el.textContent = saveData.atp.toLocaleString());
+  document.querySelectorAll('.sync-medals').forEach(el => el.textContent = saveData.medals.toLocaleString());
+  document.querySelectorAll('.sync-cores').forEach(el => el.textContent = (saveData.evoCores || 0).toLocaleString());
+
+  document.getElementById('statOwnedCount').textContent = `${Object.keys(saveData.owned).length} / ${UNITS_MASTER.length}`;
+  const totalSt = getAllStagesFlat().length;
+  const clearedCnt = Object.keys(saveData.cleared).filter(k => saveData.cleared[k]).length;
+  document.getElementById('statClearedCount').textContent = `${clearedCnt} / ${totalSt}`;
+}
+
+function goHome() {
+  syncCurrencyUI();
+  switchScreen('screen-title');
+}
+
+/* --- ステージ選択（ストーリー / 進化コア戦線 / 特別ステージ） --- */
+let currentStageCategory = 'story';
+
+function openStagesScreen() {
+  syncCurrencyUI();
+  switchStageCategory(currentStageCategory);
+  switchScreen('screen-stages');
+}
+
+function switchStageCategory(cat) {
+  currentStageCategory = cat;
+  document.getElementById('stTabStory').classList.toggle('active', cat === 'story');
+  document.getElementById('stTabCore').classList.toggle('active', cat === 'core');
+  document.getElementById('stTabSpecial').classList.toggle('active', cat === 'special');
+  renderStagesScreen();
+}
+
+function renderStagesScreen() {
+  const container = document.getElementById('stagesContainer');
+  container.innerHTML = '';
+
+  if (currentStageCategory === 'story') {
+    const storyFlat = [];
+    CHAPTERS.forEach(ch => ch.stages.forEach(st => storyFlat.push(st)));
+
+    const navBar = document.createElement('div');
+    navBar.style.cssText = 'display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; padding:8px 10px; background:rgba(15,23,42,0.85); border:1px solid rgba(56,189,248,0.28); border-radius:12px;';
+    CHAPTERS.forEach((ch, chIdx) => {
+      const firstIdx = storyFlat.findIndex(x => x.id === ch.stages[0].id);
+      const chUnlocked = firstIdx === 0 || !!saveData.cleared[storyFlat[firstIdx - 1].id];
+      const chCleared = !!saveData.cleared[ch.stages[ch.stages.length - 1].id];
+      const btn = document.createElement('button');
+      btn.className = `hud-btn ${chCleared ? 'active' : ''}`;
+      btn.style.cssText = `font-size:0.74rem; padding:4px 9px; ${!chUnlocked ? 'opacity:0.55;' : ''}`;
+      btn.textContent = `第${chIdx + 1}章${chCleared ? '★' : (!chUnlocked ? '🔒' : '')}`;
+      btn.onclick = () => {
+        const target = document.getElementById(`chapter_block_${ch.id}`);
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      };
+      navBar.appendChild(btn);
+    });
+    container.appendChild(navBar);
+
+    CHAPTERS.forEach(ch => {
+      const block = document.createElement('div');
+      block.className = 'chapter-block';
+      block.id = `chapter_block_${ch.id}`;
+      block.innerHTML = `
+        <div class="chapter-header">
+          <div class="chapter-title">${ch.title}</div>
+          <div class="chapter-sub">${ch.sub}</div>
+        </div>
+        <div class="stage-list" id="list_${ch.id}"></div>
+      `;
+      container.appendChild(block);
+
+      const listEl = block.querySelector(`#list_${ch.id}`);
+      ch.stages.forEach(st => {
+        const idx = storyFlat.findIndex(x => x.id === st.id);
+        const isCleared = !!saveData.cleared[st.id];
+        const isUnlocked = idx === 0 || !!saveData.cleared[storyFlat[idx - 1].id];
+        listEl.appendChild(createStageRowEl(st, isCleared, isUnlocked));
+      });
+    });
+  } else if (currentStageCategory === 'core') {
+    const gCap = getGlobalMaxCap();
+    const block = document.createElement('div');
+    block.className = 'chapter-block';
+    block.style.borderColor = 'rgba(56, 189, 248, 0.55)';
+    block.innerHTML = `
+      <div class="chapter-header">
+        <div class="chapter-title">💎 進化コア戦線（現在の上限解放：Lv.${gCap}）</div>
+        <div class="chapter-sub">初級クリアで30 / 中級で40 / 上級で50まで解放！</div>
+      </div>
+      <div class="stage-list" id="list_core"></div>
+    `;
+    container.appendChild(block);
+    const listEl = block.querySelector('#list_core');
+    CORE_STAGES.forEach(st => {
+      const unlocked = !st.reqStage || !!saveData.cleared[st.reqStage];
+      listEl.appendChild(createStageRowEl(st, !!saveData.cleared[st.id], unlocked));
+    });
+  } else {
+    const block = document.createElement('div');
+    block.className = 'chapter-block';
+    block.style.borderColor = 'rgba(250, 204, 21, 0.55)';
+    block.innerHTML = `
+      <div class="chapter-header">
+        <div class="chapter-title" style="color:#fde047;">⚡ 特別ステージ（ATP稼ぎ ＆ 極限ボス）</div>
+        <div class="chapter-sub">大量の⚡ATP育成資金や高難度ボスに挑戦できるスペシャルステージ！</div>
+      </div>
+      <div class="stage-list" id="list_special"></div>
+    `;
+    container.appendChild(block);
+    const listEl = block.querySelector('#list_special');
+    SPECIAL_STAGES.forEach(st => listEl.appendChild(createStageRowEl(st, !!saveData.cleared[st.id], true)));
+  }
+}
+
+function createStageRowEl(st, isCleared, isUnlocked) {
+  const row = document.createElement('div');
+  row.className = `stage-row ${isCleared ? 'cleared' : ''} ${!isUnlocked ? 'locked' : ''}`;
+  if (isUnlocked) row.onclick = () => openStagePrep(st.id);
+
+  const medalTag = st.rewardMedal > 0 ? ` / 🧬+${st.rewardMedal}` : '';
+  const coreTag = st.rewardCores > 0 ? ` / 💎+${st.rewardCores}` : '';
+  row.innerHTML = `
+    <div class="stage-row-left">
+      <div class="stage-code">${st.id}</div>
+      <div>
+        <div class="stage-info-title">${st.name} ${isCleared ? '<span style="color:#4ade80; font-size:0.78rem;">★CLEAR</span>' : ''}</div>
+        <div class="stage-info-sub">敵拠点HP: ${st.baseHp.toLocaleString()} ${!isUnlocked ? '🔒 前のステージをクリアで解放' : ''}</div>
+      </div>
+    </div>
+    <div class="stage-reward-tag">⚡+${st.rewardAtp}${medalTag}${coreTag}</div>
+  `;
+  return row;
+}
+
+/* --- 出撃前ブリーフィング（敵キャラ確認＆編成切替） --- */
+let prepStageId = null;
+
+function openStagePrep(stageId) {
+  prepStageId = stageId;
+  renderStagePrep();
+  document.getElementById('stagePrepModal').classList.add('show');
+}
+
+function closeStagePrep() {
+  document.getElementById('stagePrepModal').classList.remove('show');
+}
+
+function selectPresetFromPrep(idx) {
+  if (idx >= saveData.unlockedPresets) return;
+  saveData.activePreset = idx;
+  persistSave();
+  renderStagePrep();
+}
+
+function goFormationFromPrep() {
+  closeStagePrep();
+  openFormationScreen();
+}
+
+function launchBattleFromPrep() {
+  const sid = prepStageId;
+  closeStagePrep();
+  if (sid) startBattle(sid);
+}
+
+function renderStagePrep() {
+  const st = getStageById(prepStageId);
+  if (!st) return;
+
+  document.getElementById('prepStageTitle').textContent = st.name;
+  const medalText = st.rewardMedal > 0 ? ` ／ 🧬+${st.rewardMedal}` : '';
+  const coreText = st.rewardCores > 0 ? ` ／ 💎+${st.rewardCores}` : '';
+  document.getElementById('prepStageMeta').innerHTML =
+    `敵拠点HP: <strong>${st.baseHp.toLocaleString()}</strong> ｜ 報酬: <span style="color:#fde047; font-weight:800;">⚡+${st.rewardAtp}${medalText}${coreText}</span>`;
+
+  // 出現敵抽出
+  const enemyIdSet = new Set();
+  (st.waves || []).forEach(w => enemyIdSet.add(w.type));
+  (st.loops || []).forEach(l => enemyIdSet.add(l.type));
+  if (st.bossRatio > 0 && st.bossType) enemyIdSet.add(st.bossType);
+
+  const enemyBox = document.getElementById('prepEnemyList');
+  enemyBox.innerHTML = '';
+  enemyIdSet.forEach(eid => {
+    const edef = ENEMY_TYPES[eid];
+    if (!edef) return;
+    const tr = TRAITS_MASTER[edef.trait];
+    const chip = document.createElement('div');
+    chip.style.cssText = 'display:flex; flex-direction:column; align-items:center; gap:2px; background:rgba(30,41,59,0.9); border:1px solid rgba(255,255,255,0.14); border-radius:10px; padding:6px 10px; min-width:86px;';
+    chip.innerHTML = `
+      <canvas id="prepEnemyIcon_${eid}" width="48" height="40"></canvas>
+      <div style="font-size:0.72rem; font-weight:900;">${edef.name}</div>
+      <div style="font-size:0.66rem; color:${tr ? tr.color : '#fff'}; font-weight:900;">${tr ? tr.icon + tr.name : ''}</div>
+    `;
+    enemyBox.appendChild(chip);
+
+    const c = document.getElementById(`prepEnemyIcon_${eid}`);
+    const ctx = c.getContext('2d');
+    ctx.save(); ctx.translate(24, 22);
+    drawUnitSprite(ctx, edef.shape, edef.color, edef.shape === 'boss' ? 0.45 : 0.56, 0, false);
+    ctx.restore();
+  });
+
+  // プリセット切替タブ
+  const tabs = document.getElementById('prepPresetTabs');
+  tabs.innerHTML = '';
+  for (let i = 0; i < saveData.unlockedPresets; i++) {
+    const p = saveData.presets[i];
+    const btn = document.createElement('button');
+    btn.className = `hud-btn ${i === saveData.activePreset ? 'active' : ''}`;
+    btn.textContent = p ? p.name : `編成${i + 1}`;
+    btn.onclick = () => selectPresetFromPrep(i);
+    tabs.appendChild(btn);
+  }
+
+  // 選択中プリセットのメンバー表示
+  const preview = document.getElementById('prepDeckPreview');
+  preview.innerHTML = '';
+  const deck = getActiveDeck();
+  const activeUnits = deck.filter(uid => uid && saveData.owned[uid]);
+  if (activeUnits.length === 0) {
+    preview.innerHTML = '<span style="font-size:0.76rem; color:#fca5a5;">編成が空です！編集してください</span>';
+    return;
+  }
+  activeUnits.forEach((uid, idx) => {
+    const stU = getUnitComputedStats(uid);
+    const badge = document.createElement('div');
+    badge.style.cssText = 'display:flex; align-items:center; gap:5px; background:#1e293b; border:1px solid rgba(56,189,248,0.35); border-radius:8px; padding:4px 8px; font-size:0.72rem;';
+    badge.innerHTML = `
+      <canvas id="prepAllyIcon_${idx}" width="26" height="22"></canvas>
+      <div>
+        <div style="font-weight:900;">${stU.dispName}</div>
+        <div style="font-size:0.62rem; color:#bae6fd;">${formatTraitsText(stU.traits)}</div>
+      </div>
+    `;
+    preview.appendChild(badge);
+    const c = document.getElementById(`prepAllyIcon_${idx}`);
+    const ctx = c.getContext('2d');
+    ctx.save(); ctx.translate(13, 12);
+    drawUnitSprite(ctx, stU.shape, stU.color, 0.32, 0, false);
+    ctx.restore();
+  });
+}
+
+/* --- 編成画面（最大10枠＋役割フィルター） --- */
+let selectedUnitForDeck = null;
+let formationRoleFilter = 'all';
+
+function openFormationScreen() {
+  selectedUnitForDeck = null;
+  renderFormation();
+  switchScreen('screen-formation');
+}
+
+function setFormationRoleFilter(cat) {
+  formationRoleFilter = cat;
+  renderFormation();
+}
+
+function selectFormationPreset(idx) {
+  if (idx >= saveData.unlockedPresets) return;
+  saveData.activePreset = idx;
+  selectedUnitForDeck = null;
+  persistSave();
+  renderFormation();
+}
+
+function unlockPresetSlot() {
+  const cur = saveData.unlockedPresets || 2;
+  if (cur >= MAX_PRESETS) return;
+  const cost = PRESET_UNLOCK_COSTS[cur];
+  if (saveData.atp < cost) {
+    showToast(`⚡ATPが足りません（必要: ${cost}）`);
+    return;
+  }
+  saveData.atp -= cost;
+  saveData.unlockedPresets = cur + 1;
+  while (saveData.presets.length < saveData.unlockedPresets) {
+    saveData.presets.push({
+      name: `編成${saveData.presets.length + 1}`,
+      deck: ['ecoli', 'natto', 'ciliate', null, null, null, null, null, null, null]
+    });
+  }
+  saveData.activePreset = saveData.unlockedPresets - 1;
+  SE.atpUp();
+  persistSave();
+  renderFormation();
+  showToast(`🎉 編成枠「編成${saveData.unlockedPresets}」を解放しました！`);
+}
+
+function renameActivePreset() {
+  const cur = saveData.presets[saveData.activePreset];
+  if (!cur) return;
+  const next = prompt('編成名を入力してください（10文字以内）：', cur.name);
+  if (next && next.trim()) {
+    cur.name = next.trim().slice(0, 10);
+    persistSave();
+    renderFormation();
+  }
+}
+
+function renderFormation() {
+  const presetTabs = document.getElementById('formationPresetTabs');
+  if (presetTabs) {
+    presetTabs.innerHTML = '';
+    for (let i = 0; i < saveData.unlockedPresets; i++) {
+      const p = saveData.presets[i];
+      const btn = document.createElement('button');
+      btn.className = `hud-btn ${i === saveData.activePreset ? 'active' : ''}`;
+      btn.textContent = p ? p.name : `編成${i + 1}`;
+      btn.onclick = () => selectFormationPreset(i);
+      presetTabs.appendChild(btn);
+    }
+  }
+
+  const unlockWrap = document.getElementById('presetUnlockBtnWrap');
+  if (unlockWrap) {
+    const curUnlocked = saveData.unlockedPresets || 2;
+    if (curUnlocked < MAX_PRESETS) {
+      const cost = PRESET_UNLOCK_COSTS[curUnlocked];
+      const canBuy = saveData.atp >= cost;
+      unlockWrap.innerHTML = `<button class="hud-btn" style="border-color:${canBuy ? '#facc15' : '#475569'}; color:${canBuy ? '#fde047' : '#94a3b8'};" onclick="unlockPresetSlot()">➕ 枠+1 (⚡${cost})</button>`;
+    } else {
+      unlockWrap.innerHTML = `<span style="font-size:0.72rem; color:#4ade80; font-weight:800;">枠MAX (${MAX_PRESETS}/${MAX_PRESETS})</span>`;
+    }
+  }
+
+  const deck = getActiveDeck();
+  const deckGrid = document.getElementById('formationDeckGrid');
+  deckGrid.innerHTML = '';
+
+  deck.forEach((uid, slotIdx) => {
+    const slot = document.createElement('div');
+    slot.className = `deck-slot ${uid ? 'filled' : ''} ${selectedUnitForDeck ? 'target-highlight' : ''}`;
+    slot.onclick = () => handleDeckSlotClick(slotIdx);
+    if (uid && saveData.owned[uid]) {
+      const st = getUnitComputedStats(uid);
+      slot.innerHTML = `
+        <span class="slot-num">${slotIdx + 1}</span>
+        <canvas id="deckIcon_${slotIdx}" width="54" height="42"></canvas>
+        <div style="font-size:0.65rem; font-weight:900; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;">${st.dispName}</div>
+        <div style="font-size:0.64rem; font-weight:800; color:#fde047;">⚡${st.cost}</div>
+      `;
+    } else {
+      slot.innerHTML = `<span class="slot-num">${slotIdx + 1}</span><span style="font-size:0.7rem; color:#64748b;">空き枠</span>`;
+    }
+    deckGrid.appendChild(slot);
+
+    if (uid && saveData.owned[uid]) {
+      const c = document.getElementById(`deckIcon_${slotIdx}`);
+      const ctx = c.getContext('2d');
+      const u = getUnitDef(uid);
+      ctx.save(); ctx.translate(27, 23);
+      drawUnitSprite(ctx, u.shape, u.color, 0.56, 0, false);
+      ctx.restore();
+    }
+  });
+
+  const fBar = document.getElementById('formationFilterBar');
+  if (fBar) {
+    const cats = [
+      { id: 'all', label: 'すべて' },
+      { id: 'wall', label: '🛡️ 壁' },
+      { id: 'speed', label: '⚡ 高速' },
+      { id: 'melee', label: '⚔️ 近接' },
+      { id: 'range', label: '🏹 遠距離' },
+      { id: 'support', label: '✨ 支援' },
+      { id: 'finisher', label: '👑 大型' }
+    ];
+    fBar.innerHTML = cats.map(c => `
+      <button class="hud-btn ${formationRoleFilter === c.id ? 'active' : ''}" onclick="setFormationRoleFilter('${c.id}')">${c.label}</button>
+    `).join('');
+  }
+
+  const ownedGrid = document.getElementById('formationOwnedGrid');
+  ownedGrid.innerHTML = '';
+  const filteredIds = Object.keys(saveData.owned).filter(uid => {
+    if (formationRoleFilter === 'all') return true;
+    const def = getUnitDef(uid);
+    return def && def.gachaCat === formationRoleFilter;
+  });
+  if (filteredIds.length === 0) {
+    ownedGrid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:24px; color:#94a3b8; font-size:0.84rem;">この役割の所持キャラはまだいません</div>';
+    return;
+  }
+  filteredIds.forEach(uid => {
+    const st = getUnitComputedStats(uid);
+    const inDeck = deck.includes(uid);
+    const isSel = selectedUnitForDeck === uid;
+
+    const card = document.createElement('div');
+    card.className = `char-card ${inDeck ? 'in-deck' : ''} ${isSel ? 'selected' : ''}`;
+    card.onclick = () => {
+      selectedUnitForDeck = isSel ? null : uid;
+      renderFormation();
+    };
+    card.innerHTML = `
+      ${inDeck ? '<span class="in-deck-badge">編成中</span>' : ''}
+      <canvas id="ownIcon_${uid}" width="68" height="52"></canvas>
+      <div style="font-size:0.84rem; font-weight:900; text-align:center;">${st.dispName}</div>
+      <div style="font-size:0.7rem; color:${st.rankInfo.color}; font-weight:900;">${st.rankInfo.label} ｜ Lv.${st.lv}${st.plus > 0 ? `+${st.plus}` : ''}</div>
+      <div style="font-size:0.66rem; color:#bae6fd; font-weight:800;">特効: ${formatTraitsText(st.traits)}</div>
+      <div style="font-size:0.7rem; color:#fde047; font-weight:800;">⚡${st.cost} / HP:${st.hp} / 攻:${st.atk}</div>
+    `;
+    ownedGrid.appendChild(card);
+
+    const c = document.getElementById(`ownIcon_${uid}`);
+    const ctx = c.getContext('2d');
+    ctx.save(); ctx.translate(34, 28);
+    drawUnitSprite(ctx, st.shape, st.color, 0.68, 0, false);
+    ctx.restore();
+  });
+}
+
+function handleDeckSlotClick(slotIdx) {
+  const deck = getActiveDeck();
+  if (selectedUnitForDeck) {
+    const existingIdx = deck.indexOf(selectedUnitForDeck);
+    if (existingIdx !== -1) deck[existingIdx] = null;
+    deck[slotIdx] = selectedUnitForDeck;
+    selectedUnitForDeck = null;
+    persistSave();
+    renderFormation();
+    SE.spawn();
+  } else if (deck[slotIdx]) {
+    const filledCount = deck.filter(Boolean).length;
+    if (filledCount <= 1) {
+      showToast('最低1体はデッキに必要です！');
+      return;
+    }
+    deck[slotIdx] = null;
+    persistSave();
+    renderFormation();
+  }
+}
+
+function autoBuildDeck() {
+  const ownedIds = Object.keys(saveData.owned);
+  ownedIds.sort((a, b) => getUnitDef(a).cost - getUnitDef(b).cost);
+  const newDeck = Array(10).fill(null);
+  ownedIds.slice(0, 10).forEach((id, i) => { newDeck[i] = id; });
+  saveData.presets[saveData.activePreset].deck = newDeck;
+  persistSave();
+  renderFormation();
+  showToast('コスト順でおすすめ自動編成しました！');
+}
+
+/* --- 育成画面（キャラ強化 ＋ バイオ研究所） --- */
+let upgradeTab = 'char';
+let upgradeRoleFilter = 'all';
+
+function openUpgradeScreen() {
+  syncCurrencyUI();
+  renderUpgradeList();
+  switchScreen('screen-upgrade');
+}
+
+function switchUpgradeTab(tab) {
+  upgradeTab = tab;
+  document.getElementById('upTabChar').classList.toggle('active', tab === 'char');
+  document.getElementById('upTabFacility').classList.toggle('active', tab === 'facility');
+  renderUpgradeList();
+}
+
+function setUpgradeRoleFilter(cat) {
+  upgradeRoleFilter = cat;
+  renderUpgradeList();
+}
+
+function getGlobalMaxCap() {
+  if (saveData.cleared && saveData.cleared['core-3']) return 50;
+  if (saveData.cleared && saveData.cleared['core-2']) return 40;
+  if (saveData.cleared && saveData.cleared['core-1']) return 30;
+  return 20;
+}
+
+function getCharUpgradeCost(lv) {
+  return 80 + (lv - 1) * 65;
+}
+
+function getFacilityCost(lv) {
+  return 150 + (lv - 1) * 180;
+}
+
+function renderUpgradeList() {
+  const filterBar = document.getElementById('upgradeFilterBar');
+  const container = document.getElementById('upgradeListContainer');
+  container.innerHTML = '';
+
+  if (upgradeTab === 'char') {
+    const cats = [
+      { id: 'all', label: 'すべて' },
+      { id: 'wall', label: '🛡️ 壁' },
+      { id: 'speed', label: '⚡ 高速' },
+      { id: 'melee', label: '⚔️ 近接' },
+      { id: 'range', label: '🏹 遠距離' },
+      { id: 'support', label: '✨ 支援' },
+      { id: 'finisher', label: '👑 大型' }
+    ];
+    filterBar.style.display = 'flex';
+    filterBar.innerHTML = cats.map(c => `
+      <button class="hud-btn ${upgradeRoleFilter === c.id ? 'active' : ''}" onclick="setUpgradeRoleFilter('${c.id}')">${c.label}</button>
+    `).join('');
+
+    const uids = Object.keys(saveData.owned).filter(uid => {
+      if (upgradeRoleFilter === 'all') return true;
+      const def = getUnitDef(uid);
+      return def && def.gachaCat === upgradeRoleFilter;
+    });
+
+    if (uids.length === 0) {
+      container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:28px; color:#94a3b8; font-size:0.86rem;">この役割の所持キャラはまだいません（ガチャで仲間を増やそう！）</div>';
+      return;
+    }
+
+    const globalMax = getGlobalMaxCap();
+    const nextCoreHint = globalMax < 30 ? '💎初級クリアで30解放' : (globalMax < 40 ? '💎中級クリアで40解放' : (globalMax < 50 ? '💎上級クリアで50解放' : '最大50'));
+
+    uids.forEach(uid => {
+      const ow = saveData.owned[uid];
+      const cap = Math.min(globalMax, Math.max(20, ow.cap || 20));
+      const st = getUnitComputedStats(uid);
+      const isMaxCap = st.lv >= cap;
+      const isAbsMax = cap >= 50;
+      const cost = getCharUpgradeCost(st.lv);
+      const canUp = !isMaxCap && saveData.atp >= cost;
+      const isLv20Ready = st.lv >= 20;
+      const canMoreInGlobal = cap < globalMax;
+      const canUnlock = isLv20Ready && canMoreInGlobal && (saveData.evoCores || 0) >= 1;
+      const pct = Math.min(100, Math.round((st.lv / cap) * 100));
+
+      let unlockBtnHtml = '';
+      if (!isAbsMax) {
+        if (!canMoreInGlobal) {
+          unlockBtnHtml = `<button class="btn-lvup" style="background:#334155; color:#94a3b8; font-size:0.64rem; padding:5px 6px;" disabled>${nextCoreHint}</button>`;
+        } else {
+          unlockBtnHtml = `<button class="btn-lvup" style="background:linear-gradient(135deg,#0891b2,#06b6d4); color:#fff; font-size:0.68rem; padding:5px 8px;" ${canUnlock ? '' : 'disabled'} onclick="unlockCharCap('${uid}')">${isLv20Ready ? '🔓 上限+1 (💎1)' : '🔒 Lv.20で解放'}</button>`;
+        }
+      }
+
+      const card = document.createElement('div');
+      card.className = 'upgrade-card';
+      card.style.borderColor = st.rankInfo.color;
+      card.style.background = 'linear-gradient(145deg, rgba(30,41,59,0.95), rgba(15,23,42,0.95))';
+      card.innerHTML = `
+        <canvas id="upIcon_${uid}" width="58" height="48"></canvas>
+        <div class="upgrade-info">
+          <div class="upgrade-name">${st.dispName} <span style="font-size:0.72rem; color:${st.rankInfo.color}; font-weight:900;">${st.rankInfo.label}</span></div>
+          <div class="upgrade-lv">Lv.${st.lv}${st.plus > 0 ? ` <span style="color:#fde047;">+${st.plus}</span>` : ''} / 上限 ${cap} <span style="font-size:0.68rem; color:#64748b;">(解放枠:${globalMax})</span></div>
+          <div style="height:5px; background:rgba(2,6,23,0.7); border-radius:999px; overflow:hidden; margin:4px 0;">
+            <div style="width:${pct}%; height:100%; background:${st.rankInfo.color};"></div>
+          </div>
+          <div class="upgrade-stats">HP: ${st.hp} ｜ 攻撃: ${st.atk} ｜ ⚡${st.cost}</div>
+          <div style="font-size:0.68rem; color:#bae6fd; font-weight:800; margin-top:2px;">特効: ${formatTraitsText(st.traits)}</div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:5px; flex-shrink:0;">
+          <button class="btn-lvup" ${canUp ? '' : 'disabled'} onclick="upgradeChar('${uid}')">
+            ${st.lv >= 50 ? 'MAX' : (isMaxCap ? '上限到達' : `LvUP ⚡${cost}`)}
+          </button>
+          ${unlockBtnHtml}
+        </div>
+      `;
+      container.appendChild(card);
+
+      const c = document.getElementById(`upIcon_${uid}`);
+      const ctx = c.getContext('2d');
+      ctx.save(); ctx.translate(29, 26);
+      drawUnitSprite(ctx, st.shape, st.color, 0.58, 0, false);
+      ctx.restore();
+    });
+  } else {
+    filterBar.style.display = 'none';
+    const facs = [
+      { key: 'atpRate', icon: '⚡', name: '働き細胞効率（ATP生成速度）', desc: 'バトル中のATP増加速度と上限がUP！' },
+      { key: 'baseHp', icon: '🏰', name: '生体基地耐久（自拠点HP）', desc: 'バトル中の自拠点HPが+250ずつ上昇！' },
+      { key: 'cannon', icon: '💥', name: '免疫ビーム出力（拠点砲威力）', desc: '免疫ビームのダメージとチャージ速度がUP！' }
+    ];
+    facs.forEach(f => {
+      const lv = saveData.facilities[f.key] || 1;
+      const isMax = lv >= 20;
+      const cost = getFacilityCost(lv);
+      const canUp = !isMax && saveData.atp >= cost;
+
+      const card = document.createElement('div');
+      card.className = 'upgrade-card';
+      card.innerHTML = `
+        <div style="font-size:2rem; width:50px; text-align:center;">${f.icon}</div>
+        <div class="upgrade-info">
+          <div class="upgrade-name">${f.name}</div>
+          <div class="upgrade-lv">Lv.${lv} / 20</div>
+          <div class="upgrade-stats">${f.desc}</div>
+        </div>
+        <button class="btn-lvup" ${canUp ? '' : 'disabled'} onclick="upgradeFacility('${f.key}')">
+          ${isMax ? 'MAX' : `強化<br>⚡${cost}`}
+        </button>
+      `;
+      container.appendChild(card);
+    });
+  }
+}
+
+function upgradeChar(uid) {
+  const ow = saveData.owned[uid];
+  const globalMax = getGlobalMaxCap();
+  const cap = ow ? Math.min(globalMax, Math.max(20, ow.cap || 20)) : 20;
+  if (!ow || ow.lv >= cap || ow.lv >= 50) return;
+  const cost = getCharUpgradeCost(ow.lv);
+  if (saveData.atp < cost) return;
+  saveData.atp -= cost;
+  ow.cap = cap;
+  ow.lv++;
+  SE.atpUp();
+  if (ow.lv === 5 || ow.lv === 10 || ow.lv === 40 || ow.lv === 50) {
+    showToast(`✨ ${getUnitComputedStats(uid).dispName} に進化した！`);
+  }
+  persistSave();
+  renderUpgradeList();
+}
+
+function unlockCharCap(uid) {
+  const ow = saveData.owned[uid];
+  if (!ow || ow.lv < 20) return;
+  const globalMax = getGlobalMaxCap();
+  const cap = Math.max(20, ow.cap || 20);
+  if (cap >= globalMax || cap >= 50 || (saveData.evoCores || 0) < 1) return;
+  saveData.evoCores--;
+  ow.cap = cap + 1;
+  SE.atpUp();
+  showToast(`🔓 ${getUnitComputedStats(uid).dispName} の上限が Lv.${ow.cap} に解放！`);
+  persistSave();
+  renderUpgradeList();
+}
+
+function upgradeFacility(key) {
+  const lv = saveData.facilities[key] || 1;
+  if (lv >= 20) return;
+  const cost = getFacilityCost(lv);
+  if (saveData.atp < cost) return;
+  saveData.atp -= cost;
+  saveData.facilities[key] = lv + 1;
+  SE.atpUp();
+  persistSave();
+  renderUpgradeList();
+}
+
+/* --- 6種類の役割別ガチャ（選択タブ＋専用筐体） --- */
+let selectedGachaId = 'wall';
+
+function openGachaScreen() {
+  syncCurrencyUI();
+  renderGachaBanners();
+  switchScreen('screen-gacha');
+}
+
+function selectGachaTab(id) {
+  selectedGachaId = id;
+  renderGachaBanners();
+}
+
+function renderGachaBanners() {
+  const tabsBar = document.getElementById('gachaTabsBar');
+  const showcase = document.getElementById('gachaShowcaseContainer');
+  if (!tabsBar || !showcase) return;
+
+  tabsBar.innerHTML = GACHA_BANNERS.map(b => `
+    <button class="gacha-tab-btn ${b.id === selectedGachaId ? 'active' : ''}" onclick="selectGachaTab('${b.id}')">
+      ${b.tab}
+    </button>
+  `).join('');
+
+  const b = GACHA_BANNERS.find(x => x.id === selectedGachaId) || GACHA_BANNERS[0];
+  const pool = UNITS_MASTER.filter(u => u.gachaCat === b.id);
+
+  showcase.innerHTML = `
+    <div class="gacha-showcase" style="background:${b.bg}; border-color:${b.border};">
+      <div style="text-align:center;">
+        <div style="font-size:1.35rem; font-weight:900; color:#fff; text-shadow:0 2px 10px rgba(0,0,0,0.6);">${b.title}</div>
+        <div style="font-size:0.82rem; color:#cbd5e1; margin-top:4px;">${b.desc}</div>
+      </div>
+
+      <div class="gacha-pool-row" id="gachaPoolPreview"></div>
+
+      <div class="gacha-actions">
+        <button class="btn-gacha single" ${saveData.medals >= b.cost1 ? '' : 'disabled'} onclick="pullGacha('${b.id}', 1)">
+          🎰 1回引く（🧬${b.cost1}）
+        </button>
+        <button class="btn-gacha multi" ${saveData.medals >= b.cost5 ? '' : 'disabled'} onclick="pullGacha('${b.id}', 5)">
+          🌟 5連ガチャ（🧬${b.cost5}）
+        </button>
+      </div>
+
+      <div class="rate-bar">
+        <span class="rate-pill" style="color:#38bdf8;">🌌MR 0.5%</span>
+        <span class="rate-pill" style="color:#e879f9;">🔮XR 1.5%</span>
+        <span class="rate-pill" style="color:#fb7185;">👑LR 3.0%</span>
+        <span class="rate-pill" style="color:#facc15;">🔥UR 7.0%</span>
+        <span class="rate-pill" style="color:#c084fc;">🌟SR 18.0%</span>
+        <span class="rate-pill" style="color:#60a5fa;">✨R 30.0%</span>
+        <span class="rate-pill" style="color:#94a3b8;">🔹N 40.0%</span>
+      </div>
+    </div>
+  `;
+
+  const poolRow = document.getElementById('gachaPoolPreview');
+  pool.forEach(u => {
+    const chip = document.createElement('div');
+    chip.className = 'gacha-pool-chip';
+    chip.innerHTML = `
+      <canvas id="gPoolIcon_${u.id}" width="64" height="50"></canvas>
+      <div style="font-size:0.78rem; font-weight:900;">${u.name}</div>
+      <div style="font-size:0.66rem; color:#94a3b8;">${u.roleLabel}</div>
+    `;
+    poolRow.appendChild(chip);
+
+    const c = document.getElementById(`gPoolIcon_${u.id}`);
+    const ctx = c.getContext('2d');
+    ctx.save(); ctx.translate(32, 27);
+    drawUnitSprite(ctx, u.shape, u.color, 0.65, 0, false);
+    ctx.restore();
+  });
+}
+
+function pullGacha(catId, count) {
+  const banner = GACHA_BANNERS.find(b => b.id === catId);
+  const cost = count === 5 ? banner.cost5 : banner.cost1;
+  if (saveData.medals < cost) return;
+
+  saveData.medals -= cost;
+  const pool = UNITS_MASTER.filter(u => u.gachaCat === catId);
+  const results = [];
+
+  for (let i = 0; i < count; i++) {
+    const picked = pool[Math.floor(Math.random() * pool.length)];
+    const rolledRank = rollGachaRank();
+    const rolledTrait = rollRandomTrait();
+    const isNew = !saveData.owned[picked.id];
+    let rankUp = false;
+    let traitAdded = false;
+    let atpBonus = 0;
+
+    if (isNew) {
+      saveData.owned[picked.id] = { lv: 1, plus: 0, cap: 20, rank: rolledRank, traits: [rolledTrait] };
+      const deck = getActiveDeck();
+      const emptyIdx = deck.indexOf(null);
+      if (emptyIdx !== -1) deck[emptyIdx] = picked.id;
+    } else {
+      const curOw = saveData.owned[picked.id];
+      const curRankKey = curOw.rank || picked.rarity || 'N';
+      if (RANKS_MASTER[rolledRank].order > RANKS_MASTER[curRankKey].order) {
+        curOw.rank = rolledRank;
+        rankUp = true;
+      }
+      if (!Array.isArray(curOw.traits)) curOw.traits = [rollRandomTrait()];
+      if (!curOw.traits.includes(rolledTrait) && curOw.traits.length < 2) {
+        curOw.traits.push(rolledTrait);
+        traitAdded = true;
+      }
+      curOw.plus = (curOw.plus || 0) + 1;
+      atpBonus = 60 + RANKS_MASTER[rolledRank].order * 40;
+      saveData.atp += atpBonus;
+    }
+    results.push({ unit: picked, rank: rolledRank, trait: rolledTrait, isNew, rankUp, traitAdded, atpBonus });
+  }
+
+  SE.win();
+  persistSave();
+  renderGachaBanners();
+  showGachaModal(banner.title, results);
+}
+
+function showGachaModal(title, results) {
+  document.getElementById('gachaModalTitle').textContent = `🎊 ${title}`;
+  const grid = document.getElementById('gachaResultGrid');
+  grid.innerHTML = '';
+  results.forEach((r, idx) => {
+    const rInfo = RANKS_MASTER[r.rank];
+    const tInfo = TRAITS_MASTER[r.trait];
+    const badgeText = r.isNew ? '🆕 NEW!!' : (r.rankUp ? `⬆️ 昇格! +1 (⚡+${r.atpBonus})` : (r.traitAdded ? `🎯 新特効! +1 (⚡+${r.atpBonus})` : `✨ +1限界突破 (⚡+${r.atpBonus})`));
+    const badgeCol = r.isNew ? '#4ade80' : (r.rankUp ? '#38bdf8' : (r.traitAdded ? '#f0abfc' : '#fde047'));
+
+    const item = document.createElement('div');
+    item.className = 'gacha-res-item';
+    item.style.borderColor = rInfo.color;
+    item.innerHTML = `
+      <span style="font-size:0.64rem; font-weight:900; color:${badgeCol};">${badgeText}</span>
+      <span style="font-size:0.78rem; font-weight:900; color:${rInfo.color};">${rInfo.label}</span>
+      <canvas id="gResIcon_${idx}" width="60" height="48"></canvas>
+      <div style="font-size:0.82rem; font-weight:900;">${r.unit.name}</div>
+      <div style="font-size:0.68rem; color:#bae6fd; font-weight:800;">特効: ${tInfo.icon}${tInfo.name}</div>
+    `;
+    grid.appendChild(item);
+
+    const c = document.getElementById(`gResIcon_${idx}`);
+    const ctx = c.getContext('2d');
+    ctx.save(); ctx.translate(30, 26);
+    drawUnitSprite(ctx, r.unit.shape, r.unit.color, 0.6, 0, false);
+    ctx.restore();
+  });
+  document.getElementById('gachaModal').classList.add('show');
+}
+
+function closeGachaModal() {
+  document.getElementById('gachaModal').classList.remove('show');
+}
+
+/* --- メニュー（選択ハブ → 図鑑・遊び方・設定） --- */
+let currentMenuTab = 'hub';
+let dexFilterCat = 'all';
+
+function openMenuScreen() {
+  syncCurrencyUI();
+  switchMenuTab('hub');
+  switchScreen('screen-menu');
+}
+
+function handleMenuBack() {
+  if (currentMenuTab === 'hub') {
+    goHome();
+  } else {
+    switchMenuTab('hub');
+  }
+}
+
+function switchMenuTab(tab) {
+  currentMenuTab = tab;
+  const backBtn = document.getElementById('menuBackBtn');
+  const titleEl = document.getElementById('menuHeaderTitle');
+  if (backBtn) backBtn.textContent = tab === 'hub' ? '⬅️ ホーム' : '⬅️ メニューへ';
+  if (titleEl) {
+    titleEl.textContent = tab === 'dex' ? '📘 バイオ・ロジカ 図鑑'
+      : (tab === 'help' ? '📖 遊び方・ルール'
+      : (tab === 'settings' ? '⚙️ 設定・データ管理' : '⚙️ メニュー'));
+  }
+  renderMenuTab();
+}
+
+function setDexFilter(cat) {
+  dexFilterCat = cat;
+  renderMenuTab();
+}
+
+function renderMenuTab() {
+  const wrap = document.getElementById('menuTabContent');
+  if (!wrap) return;
+
+  if (currentMenuTab === 'hub') {
+    const ownedCount = Object.keys(saveData.owned).length;
+    wrap.innerHTML = `
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <button class="nav-card nav-formation" style="border-color:#38bdf8; border-bottom-color:#0284c7; background:linear-gradient(135deg, rgba(2,132,199,0.28), #0f172a);" onclick="switchMenuTab('dex')">
+          <div class="nav-icon">📘</div>
+          <div>
+            <div class="nav-title">バイオ・ロジカ 図鑑 <span style="font-size:0.8rem; color:#38bdf8;">(${ownedCount} / ${UNITS_MASTER.length})</span></div>
+            <div class="nav-desc">全20種族のステータス・進化形態・特効属性をチェック！</div>
+          </div>
+        </button>
+
+        <button class="nav-card nav-upgrade" onclick="switchMenuTab('help')">
+          <div class="nav-icon">📖</div>
+          <div>
+            <div class="nav-title">遊び方・ルールガイド</div>
+            <div class="nav-desc">属性相性（1.6倍）・進化コア戦線・キーボード操作の確認</div>
+          </div>
+        </button>
+
+        <button class="nav-card nav-menu" onclick="switchMenuTab('settings')">
+          <div class="nav-icon">⚙️</div>
+          <div>
+            <div class="nav-title">設定・セーブデータ管理</div>
+            <div class="nav-desc">効果音（SE）・再生速度・バックアップ引き継ぎ・データ初期化</div>
+          </div>
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  if (currentMenuTab === 'dex') {
+    const ownedCount = Object.keys(saveData.owned).length;
+    const cats = [
+      { id: 'all', label: 'すべて' },
+      { id: 'wall', label: '🛡️ 壁' },
+      { id: 'speed', label: '⚡ 高速' },
+      { id: 'melee', label: '⚔️ 近接' },
+      { id: 'range', label: '🏹 遠距離' },
+      { id: 'support', label: '✨ 支援' },
+      { id: 'finisher', label: '👑 大型' }
+    ];
+    const filtered = dexFilterCat === 'all' ? UNITS_MASTER : UNITS_MASTER.filter(u => u.gachaCat === dexFilterCat);
+
+    wrap.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+        <div style="font-size:0.9rem; font-weight:900; color:#38bdf8;">📘 バイオ・ロジカ 図鑑（所持: ${ownedCount} / ${UNITS_MASTER.length}）</div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          ${cats.map(c => `<button class="hud-btn ${dexFilterCat === c.id ? 'active' : ''}" onclick="setDexFilter('${c.id}')">${c.label}</button>`).join('')}
+        </div>
+      </div>
+      <div class="dex-grid" id="dexGridContainer"></div>
+    `;
+
+    const grid = document.getElementById('dexGridContainer');
+    filtered.forEach(u => {
+      const isOwned = !!saveData.owned[u.id];
+      const st = isOwned ? getUnitComputedStats(u.id) : null;
+      const card = document.createElement('div');
+      card.className = `dex-card ${isOwned ? '' : 'unowned'}`;
+      card.style.borderColor = isOwned ? st.rankInfo.color : '';
+      card.innerHTML = `
+        <canvas id="dexIcon_${u.id}" width="64" height="50"></canvas>
+        <div style="font-size:0.86rem; font-weight:900;">${isOwned ? st.dispName : u.name}</div>
+        <div style="font-size:0.7rem; color:${isOwned ? st.rankInfo.color : '#38bdf8'}; font-weight:900;">${isOwned ? st.rankInfo.label : '未所持'} ｜ ${u.roleLabel}</div>
+        ${isOwned ? `<div style="font-size:0.66rem; color:#bae6fd; font-weight:800;">特効: ${formatTraitsText(st.traits)}</div>` : ''}
+        <div style="font-size:0.68rem; color:#fde047; font-weight:800;">${isOwned ? `Lv.${st.lv}${st.plus > 0 ? `+${st.plus}` : ''} ｜ HP:${st.hp} 攻:${st.atk}` : `⚡${u.cost} ｜ ガチャで解放`}</div>
+        <div style="font-size:0.68rem; color:#94a3b8; line-height:1.4;">${u.desc}</div>
+      `;
+      grid.appendChild(card);
+
+      const c = document.getElementById(`dexIcon_${u.id}`);
+      const ctx = c.getContext('2d');
+      ctx.save(); ctx.translate(32, 27);
+      drawUnitSprite(ctx, u.shape, isOwned ? u.color : '#475569', 0.62, 0, false);
+      ctx.restore();
+    });
+  } else if (currentMenuTab === 'help') {
+    wrap.innerHTML = `
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <div class="chapter-block">
+          <div class="chapter-title">⚔️ バトルの基本ルール</div>
+          <div style="font-size:0.8rem; color:#cbd5e1; line-height:1.65;">
+            ・時間経過で貯まる <strong>⚡ATP</strong> を使って細胞を出撃させ、左側の敵拠点を破壊すれば勝利！<br>
+            ・左下の <strong>「⚡働き細胞」</strong> を上げると、ATPの増加スピードと最大上限がアップします。<br>
+            ・右下の <strong>「💥免疫ビーム」</strong> が100%になったら、全敵を吹き飛ばす必殺レーザーを発射可能！<br>
+            ・ストーリー各章の<strong>最終ステージ（10番目）</strong>をクリアすると、ガチャ用の <strong>🧬DNAメダル</strong> が手に入ります。
+          </div>
+        </div>
+        <div class="chapter-block">
+          <div class="chapter-title">🎯 属性相性 ＆ 💎 段階的上限解放</div>
+          <div style="font-size:0.8rem; color:#cbd5e1; line-height:1.65;">
+            ・敵には5属性（🔴細菌・🟣ウイルス・🟢真菌・🟡変異種・⚫耐性菌）があり、味方はガチャでランダムに特効属性を持ちます。<br>
+            ・対応属性の敵には <strong>与ダメージ1.6倍 ＆ 被ダメージ0.7倍</strong>！<br>
+            ・初期レベル上限は <strong>Lv.20</strong>。バトルの <strong>「💎進化コア戦線」</strong>（初級→30 / 中級→40 / 上級→50）をクリアし、進化コアで上限を解放できます！
+          </div>
+        </div>
+        <div class="chapter-block">
+          <div class="chapter-title">⌨️ PCキーボード操作（バトル中）</div>
+          <div style="font-size:0.8rem; color:#cbd5e1; line-height:1.65;">
+            ・<strong>[1]〜[0]</strong>：スロット1〜10のユニット出撃<br>
+            ・<strong>[Q]</strong>：働き細胞レベルUP<br>
+            ・<strong>[E] または [Space]</strong>：免疫ビーム発射
+          </div>
+        </div>
+      </div>
+    `;
+  } else if (currentMenuTab === 'settings') {
+    wrap.innerHTML = `
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div class="chapter-block">
+          <div class="chapter-title">🔊 サウンド ＆ バトル設定</div>
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0;">
+            <div>
+              <div style="font-size:0.88rem; font-weight:900;">効果音（SE）</div>
+              <div style="font-size:0.74rem; color:#94a3b8;">出撃・攻撃・勝利などのシンセ効果音</div>
+            </div>
+            <button id="menuSoundBtn" class="btn-back" onclick="toggleSound(); renderMenuTab();">${soundEnabled ? '🔊 SE: ON' : '🔇 SE: OFF'}</button>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-top:1px solid rgba(148,163,184,0.18);">
+            <div>
+              <div style="font-size:0.88rem; font-weight:900;">バトル再生速度</div>
+              <div style="font-size:0.74rem; color:#94a3b8;">バトル開始時のデフォルト倍速設定</div>
+            </div>
+            <button class="btn-back" onclick="toggleSpeed(); renderMenuTab();">${speedMultiplier === 2 ? '⏩ 2x（倍速）' : '⏩ 1x（通常）'}</button>
+          </div>
+        </div>
+
+        <div class="chapter-block">
+          <div class="chapter-title">💾 セーブデータ管理</div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn-back" onclick="exportSaveCode()">📋 バックアップコピー</button>
+            <button class="btn-back" onclick="importSaveCode()">📥 バックアップ復元</button>
+            <button class="btn-back" style="border-color:#ef4444; color:#fca5a5;" onclick="resetSaveData()">🗑️ セーブデータ初期化</button>
+          </div>
+        </div>
+
+        <div style="text-align:center; padding:10px; font-size:0.74rem; color:#64748b;" onclick="handleSecretAdminTap()">
+          BATTLE LOGICA Ver 1.0
+        </div>
+      </div>
+    `;
+  }
+}
+
+function exportSaveCode() {
+  try {
+    const code = btoa(unescape(encodeURIComponent(JSON.stringify(saveData))));
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(code).then(() => showToast('📋 バックアップコードをコピーしました！'));
+    } else {
+      prompt('バックアップコードをコピーしてください：', code);
+    }
+  } catch (e) {
+    showToast('コピーに失敗しました');
+  }
+}
+
+function importSaveCode() {
+  const code = prompt('バックアップコードを貼り付けてください：');
+  if (!code) return;
+  try {
+    const parsed = JSON.parse(decodeURIComponent(escape(atob(code.trim()))));
+    if (!parsed || !parsed.owned) throw new Error('invalid');
+    saveData = Object.assign(createDefaultSave(), parsed);
+    persistSave();
+    renderMenuTab();
+    showToast('📥 セーブデータを復元しました！');
+  } catch (e) {
+    showToast('⚠️ 無効なコードです');
+  }
+}
+
+/* ============================================================================
+   4. バトルエンジン（横画面ラインディフェンス）
+============================================================================ */
+const WORLD_W = 1100;
+const WORLD_H = 460;
+const GROUND_Y = 365;
+const ENEMY_BASE_X = 95;
+const ALLY_BASE_X = 1005;
+
+let currentStageId = '1-1';
+let battleState = null;
+let rafId = null;
+let lastFrameTime = 0;
+let speedMultiplier = 1;
+
+function getStageById(id) {
+  return getAllStagesFlat().find(s => s.id === id);
+}
+
+function startBattle(stageId) {
+  ensureAudio();
+  currentStageId = stageId;
+  const st = getStageById(stageId);
+  const allyBaseHp = 1200 + ((saveData.facilities.baseHp || 1) - 1) * 250;
+
+  // デッキの有効ユニット取得
+  const activeDeck = getActiveDeck().map(uid => (uid && saveData.owned[uid]) ? getUnitComputedStats(uid) : null);
+
+  battleState = {
+    stage: st,
+    deck: activeDeck,
+    elapsed: 0,
+    atp: 200,
+    atpLv: 1,
+    maxAtpLv: 8,
+    allyBaseHp,
+    allyBaseMaxHp: allyBaseHp,
+    enemyBaseHp: st.baseHp,
+    enemyBaseMaxHp: st.baseHp,
+    cannonCharge: 0,
+    cannonBeamTimer: 0,
+    cooldowns: activeDeck.map(() => 0),
+    units: [],
+    effects: [],
+    popups: [],
+    spawnQueue: buildSpawnQueue(st),
+    loopTimers: st.loops.map(l => l.delay + 28),
+    bossSpawned: false,
+    totalSummoned: 0,
+    totalDefeated: 0,
+    finished: false,
+    baseHitFlashAlly: 0,
+    baseHitFlashEnemy: 0
+  };
+
+  document.getElementById('battleStageName').textContent = st.name;
+  document.getElementById('resultModal').classList.remove('show');
+  document.getElementById('bossBanner').classList.remove('show');
+  switchScreen('screen-battle');
+  buildBattleDeckUI();
+  updateBattleHUD();
+
+  if (rafId) cancelAnimationFrame(rafId);
+  lastFrameTime = performance.now();
+  rafId = requestAnimationFrame(gameLoop);
+}
+
+function buildSpawnQueue(st) {
+  const q = [];
+  st.waves.forEach(w => {
+    for (let i = 0; i < w.count; i++) {
+      q.push({ t: w.t + i * w.iv, type: w.type, spawned: false });
+    }
+  });
+  return q;
+}
+
+function buildBattleDeckUI() {
+  const container = document.getElementById('unitSlotsContainer');
+  container.innerHTML = '';
+  // 上段5枠＋下段5枠（下段が空なら5枠1段に自動圧縮して画面広く！）
+  const hasBottomRow = battleState.deck.slice(5, 10).some(Boolean);
+  const count = hasBottomRow ? 10 : 5;
+
+  for (let idx = 0; idx < count; idx++) {
+    const u = battleState.deck[idx];
+    const btn = document.createElement('button');
+    if (!u) {
+      btn.className = 'unit-btn empty-slot';
+      btn.disabled = true;
+      container.appendChild(btn);
+      continue;
+    }
+    btn.className = 'unit-btn';
+    btn.id = `unitBtn_${idx}`;
+    btn.onclick = () => summonUnit(idx);
+    btn.innerHTML = `
+      <div class="unit-cd-overlay" id="unitCdOverlay_${idx}" style="height:0%;"></div>
+      <div class="unit-cd-bar" id="unitCdBar_${idx}" style="width:0%;"></div>
+      <canvas class="unit-icon-canvas" id="unitIcon_${idx}" width="54" height="44"></canvas>
+      <div class="unit-name">${u.dispName}</div>
+      <div class="unit-cost">⚡${u.cost}</div>
+    `;
+    container.appendChild(btn);
+
+    const ic = document.getElementById(`unitIcon_${idx}`);
+    const ictx = ic.getContext('2d');
+    ictx.save(); ictx.translate(27, 24);
+    drawUnitSprite(ictx, u.shape, u.color, 0.56, 0, false);
+    ictx.restore();
+  }
+}
+
+function getAtpMax(lv) {
+  const facBonus = ((saveData.facilities.atpRate || 1) - 1) * 150;
+  return 1000 + (lv - 1) * 450 + facBonus;
+}
+
+function getAtpRate(lv) {
+  const facBonus = ((saveData.facilities.atpRate || 1) - 1) * 8;
+  const cyanoCount = battleState ? battleState.units.filter(u => u.side === 'ally' && u.def.special === 'atp_gen').length : 0;
+  return 46 + (lv - 1) * 18 + facBonus + cyanoCount * 12;
+}
+
+function getAtpUpgradeCost(lv) {
+  return 120 + (lv - 1) * 140;
+}
+
+function summonUnit(idx) {
+  if (!battleState || battleState.finished) return;
+  const u = battleState.deck[idx];
+  if (!u || battleState.cooldowns[idx] > 0 || battleState.atp < u.cost) return;
+  battleState.atp -= u.cost;
+  battleState.cooldowns[idx] = u.cd;
+  battleState.totalSummoned++;
+  SE.spawn();
+  spawnEntity('ally', u, ALLY_BASE_X - 36, 1);
+  updateBattleHUD();
+}
+
+function upgradeAtp() {
+  if (!battleState || battleState.finished || battleState.atpLv >= battleState.maxAtpLv) return;
+  const cost = getAtpUpgradeCost(battleState.atpLv);
+  if (battleState.atp < cost) return;
+  battleState.atp -= cost;
+  battleState.atpLv++;
+  SE.atpUp();
+  battleState.popups.push({ x: ALLY_BASE_X - 20, y: GROUND_Y - 120, text: `⚡働き細胞 Lv.${battleState.atpLv}!`, color: '#fde047', life: 1.0, maxLife: 1.0 });
+  updateBattleHUD();
+}
+
+function fireCannon() {
+  if (!battleState || battleState.finished || battleState.cannonCharge < 100) return;
+  battleState.cannonCharge = 0;
+  battleState.cannonBeamTimer = 0.55;
+  SE.cannon();
+  const facLv = saveData.facilities.cannon || 1;
+  const dmg = 190 + battleState.atpLv * 22 + (facLv - 1) * 45;
+  battleState.units.forEach(ent => {
+    if (ent.side === 'enemy' && ent.hp > 0) applyDamage(ent, dmg, true);
+  });
+  updateBattleHUD();
+}
+
+function spawnEntity(side, def, x, mult = 1) {
+  const hp = Math.round(def.hp * mult);
+  const atk = Math.round(def.atk * mult);
+  const kbStep = hp / (def.kb + 1);
+  battleState.units.push({
+    side, def, x,
+    yOffset: (Math.random() - 0.5) * 14,
+    hp, maxHp: hp, atk,
+    nextKbHp: hp - kbStep, kbStep,
+    atkTimer: 0.15, atkAnim: 0, kbTimer: 0, kbVx: 0, hitFlash: 0,
+    slowTimer: 0, poisonTimer: 0, poisonTick: 0, endured: false,
+    walkPhase: Math.random() * Math.PI * 2,
+    dead: false,
+    dir: side === 'ally' ? -1 : 1
+  });
+}
+
+function retryBattle() { startBattle(currentStageId); }
+function retreatBattle() {
+  if (rafId) cancelAnimationFrame(rafId);
+  rafId = null;
+  openStagesScreen();
+}
+function backToStages() {
+  document.getElementById('resultModal').classList.remove('show');
+  retreatBattle();
+}
+function toggleSpeed() {
+  speedMultiplier = speedMultiplier === 1 ? 2 : 1;
+  const btn = document.getElementById('speedBtn');
+  btn.textContent = speedMultiplier === 2 ? '⏩ 2x' : '⏩ 1x';
+  btn.classList.toggle('active', speedMultiplier === 2);
+}
+
+window.addEventListener('keydown', e => {
+  if (!battleState || battleState.finished) return;
+  if (e.key >= '1' && e.key <= '9') summonUnit(parseInt(e.key, 10) - 1);
+  else if (e.key === '0') summonUnit(9);
+  else if (e.key === 'q' || e.key === 'Q') upgradeAtp();
+  else if (e.key === 'e' || e.key === 'E' || e.key === ' ') fireCannon();
+});
+
+function gameLoop(now) {
+  const rawDt = Math.min(0.05, (now - lastFrameTime) / 1000);
+  lastFrameTime = now;
+  const dt = rawDt * speedMultiplier;
+  if (battleState && !battleState.finished) updateBattle(dt);
+  renderBattle();
+  if (battleState && !battleState.finished) rafId = requestAnimationFrame(gameLoop);
+}
+
+function updateBattle(dt) {
+  const st = battleState;
+  st.elapsed += dt;
+
+  const maxAtp = getAtpMax(st.atpLv);
+  st.atp = Math.min(maxAtp, st.atp + getAtpRate(st.atpLv) * dt);
+  const cannonSpeed = 2.2 + ((saveData.facilities.cannon || 1) - 1) * 0.12;
+  st.cannonCharge = Math.min(100, st.cannonCharge + cannonSpeed * dt);
+  if (st.cannonBeamTimer > 0) st.cannonBeamTimer = Math.max(0, st.cannonBeamTimer - dt);
+  if (st.baseHitFlashAlly > 0) st.baseHitFlashAlly = Math.max(0, st.baseHitFlashAlly - dt);
+  if (st.baseHitFlashEnemy > 0) st.baseHitFlashEnemy = Math.max(0, st.baseHitFlashEnemy - dt);
+
+  for (let i = 0; i < st.cooldowns.length; i++) {
+    if (st.cooldowns[i] > 0) st.cooldowns[i] = Math.max(0, st.cooldowns[i] - dt);
+  }
+
+  st.spawnQueue.forEach(w => {
+    if (!w.spawned && st.elapsed >= w.t) {
+      w.spawned = true;
+      spawnEntity('enemy', ENEMY_TYPES[w.type], ENEMY_BASE_X + 36, st.stage.mult);
+    }
+  });
+
+  st.stage.loops.forEach((lw, idx) => {
+    if (st.elapsed >= st.loopTimers[idx]) {
+      st.loopTimers[idx] = st.elapsed + lw.delay;
+      spawnEntity('enemy', ENEMY_TYPES[lw.type], ENEMY_BASE_X + 36, st.stage.mult);
+    }
+  });
+
+  if (!st.bossSpawned && st.stage.bossRatio > 0 && st.enemyBaseHp <= st.enemyBaseMaxHp * st.stage.bossRatio) {
+    st.bossSpawned = true;
+    SE.boss();
+    const banner = document.getElementById('bossBanner');
+    banner.classList.add('show');
+    setTimeout(() => banner.classList.remove('show'), 2200);
+    const cnt = st.stage.bossCount || 1;
+    for (let i = 0; i < cnt; i++) {
+      spawnEntity('enemy', ENEMY_TYPES[st.stage.bossType], ENEMY_BASE_X + 42 + i * 35, st.stage.mult);
+    }
+    st.units.forEach(u => { if (u.side === 'ally') { u.kbTimer = 0.25; u.kbVx = 180; } });
+  }
+
+  st.units.forEach(ent => {
+    if (ent.dead) return;
+    if (ent.hitFlash > 0) ent.hitFlash = Math.max(0, ent.hitFlash - dt);
+    if (ent.atkAnim > 0) ent.atkAnim = Math.max(0, ent.atkAnim - dt);
+    if (ent.slowTimer > 0) ent.slowTimer = Math.max(0, ent.slowTimer - dt);
+    if (ent.poisonTimer > 0) {
+      ent.poisonTimer -= dt;
+      ent.poisonTick += dt;
+      if (ent.poisonTick >= 0.7) {
+        ent.poisonTick = 0;
+        applyDamage(ent, 24, false);
+        if (ent.dead) return;
+      }
+    }
+
+    if (ent.kbTimer > 0) {
+      ent.kbTimer -= dt;
+      ent.x += ent.kbVx * dt;
+      ent.x = Math.max(ENEMY_BASE_X + 18, Math.min(ALLY_BASE_X - 18, ent.x));
+      return;
+    }
+
+    const targets = findTargetsInRange(ent);
+    const enemyBaseDist = ent.side === 'ally' ? (ent.x - ENEMY_BASE_X) : (ALLY_BASE_X - ent.x);
+    const baseInRange = enemyBaseDist <= ent.def.range + 26;
+
+    if (targets.length > 0 || baseInRange) {
+      ent.atkTimer -= dt;
+      if (ent.atkTimer <= 0) {
+        ent.atkTimer = ent.def.atkInterval;
+        ent.atkAnim = 0.24;
+        performAttack(ent, targets, baseInRange);
+      }
+    } else {
+      const spd = ent.def.speed * (ent.slowTimer > 0 ? 0.5 : 1);
+      ent.x += ent.dir * spd * dt;
+      ent.walkPhase += dt * (spd * 0.14);
+    }
+  });
+
+  st.units = st.units.filter(ent => {
+    if (ent.dead) {
+      if (ent.side === 'enemy') {
+        st.totalDefeated++;
+        const reward = ent.def.reward || 30;
+        st.atp = Math.min(getAtpMax(st.atpLv), st.atp + reward);
+        st.popups.push({ x: ent.x, y: GROUND_Y - 48, text: `+${reward} ATP`, color: '#fde047', life: 0.85, maxLife: 0.85 });
+      }
+      st.effects.push({ type: 'burst', x: ent.x, y: GROUND_Y - 24, color: ent.def.color, radius: ent.def.size, life: 0.3, maxLife: 0.3 });
+      return false;
+    }
+    return true;
+  });
+
+  st.effects = st.effects.filter(ef => { ef.life -= dt; return ef.life > 0; });
+  st.popups = st.popups.filter(p => { p.y -= 28 * dt; p.life -= dt; return p.life > 0; });
+
+  if (st.enemyBaseHp <= 0) { st.enemyBaseHp = 0; finishBattle(true); }
+  else if (st.allyBaseHp <= 0) { st.allyBaseHp = 0; finishBattle(false); }
+
+  updateBattleHUD();
+}
+
+function findTargetsInRange(ent) {
+  const list = [];
+  for (const other of battleState.units) {
+    if (other.dead || other.side === ent.side || other.kbTimer > 0) continue;
+    const dist = ent.side === 'ally' ? (ent.x - other.x) : (other.x - ent.x);
+    if (dist >= -18 && dist <= ent.def.range + other.def.size * 0.4) {
+      list.push({ unit: other, dist });
+    }
+  }
+  list.sort((a, b) => a.dist - b.dist);
+  return list.map(i => i.unit);
+}
+
+function performAttack(ent, targets, baseInRange) {
+  SE.hit();
+  const isAlly = ent.side === 'ally';
+  let dmg = ent.atk;
+  let isCrit = false;
+
+  if (ent.def.special === 'crit' && Math.random() < 0.3) {
+    dmg *= 2;
+    isCrit = true;
+  }
+
+  if (targets.length > 0) {
+    const hitList = ent.def.aoe ? targets : [targets[0]];
+    hitList.forEach(t => {
+      let finalDmg = dmg;
+      let isEffective = false;
+      if (isAlly && Array.isArray(ent.def.traits) && t.def.trait && ent.def.traits.includes(t.def.trait)) {
+        finalDmg = Math.round(finalDmg * 1.6);
+        isEffective = true;
+      } else if (!isAlly && ent.def.trait && Array.isArray(t.def.traits) && t.def.traits.includes(ent.def.trait)) {
+        finalDmg = Math.round(finalDmg * 0.7);
+      }
+      applyDamage(t, finalDmg, false, isCrit, isEffective);
+      if (ent.def.special === 'slow') t.slowTimer = 2.0;
+      if (ent.def.special === 'poison') t.poisonTimer = 3.5;
+    });
+
+    if (ent.def.special === 'lifesteal') {
+      ent.hp = Math.min(ent.maxHp, ent.hp + Math.round(dmg * 0.2));
+    }
+    if (ent.def.special === 'heal') {
+      battleState.units.forEach(a => {
+        if (a.side === 'ally' && !a.dead) a.hp = Math.min(a.maxHp, a.hp + 28);
+      });
+    }
+
+    battleState.effects.push({
+      type: ent.def.range > 90 ? 'shot' : 'slash',
+      x1: ent.x, y1: GROUND_Y - 24 + ent.yOffset,
+      x2: hitList[0].x, y2: GROUND_Y - 24 + hitList[0].yOffset,
+      color: ent.def.color, life: 0.18, maxLife: 0.18
+    });
+  }
+
+  if (baseInRange && (targets.length === 0 || ent.def.aoe)) {
+    if (isAlly) {
+      battleState.enemyBaseHp = Math.max(0, battleState.enemyBaseHp - dmg);
+      battleState.baseHitFlashEnemy = 0.12;
+      battleState.popups.push({ x: ENEMY_BASE_X + 20, y: GROUND_Y - 105, text: `-${dmg}`, color: '#38bdf8', life: 0.65, maxLife: 0.65 });
+    } else {
+      battleState.allyBaseHp = Math.max(0, battleState.allyBaseHp - dmg);
+      battleState.baseHitFlashAlly = 0.12;
+      battleState.popups.push({ x: ALLY_BASE_X - 20, y: GROUND_Y - 105, text: `-${dmg}`, color: '#f87171', life: 0.65, maxLife: 0.65 });
+    }
+  }
+}
+
+function applyDamage(target, dmg, forceKb, isCrit = false, isEffective = false) {
+  target.hp -= dmg;
+  target.hitFlash = 0.12;
+  const txt = isCrit ? `💥${dmg}!` : (isEffective ? `🎯${dmg}` : `${dmg}`);
+  const col = isCrit ? '#fde047' : (isEffective ? '#4ade80' : (forceKb ? '#38bdf8' : (target.side === 'enemy' ? '#ffffff' : '#fca5a5')));
+  battleState.popups.push({
+    x: target.x + (Math.random() - 0.5) * 14,
+    y: GROUND_Y - target.def.size - 18,
+    text: txt,
+    color: col,
+    life: 0.6, maxLife: 0.6
+  });
+
+  if (target.hp <= 0) {
+    if (target.def.special === 'endure' && !target.endured) {
+      target.endured = true;
+      target.hp = 1;
+      battleState.popups.push({ x: target.x, y: GROUND_Y - 64, text: '💎耐えた!', color: '#fde047', life: 0.9, maxLife: 0.9 });
+      return;
+    }
+    target.hp = 0;
+    target.dead = true;
+    return;
+  }
+
+  if (forceKb || target.hp <= target.nextKbHp) {
+    if (target.hp <= target.nextKbHp) target.nextKbHp -= target.kbStep;
+    target.kbTimer = 0.28;
+    target.kbVx = target.side === 'ally' ? 210 : -210;
+    SE.kb();
+  }
+}
+
+function finishBattle(isWin) {
+  const st = battleState;
+  st.finished = true;
+  if (isWin) {
+    SE.win();
+    const isFirst = !saveData.cleared[st.stage.id];
+    saveData.cleared[st.stage.id] = true;
+    const atpGain = isFirst ? st.stage.rewardAtp : Math.round(st.stage.rewardAtp * 0.5);
+    const medalGain = st.stage.rewardMedal > 0 ? (isFirst ? st.stage.rewardMedal : 5) : 0;
+    const coreGain = isFirst ? (st.stage.rewardCores || 0) : (st.stage.loopCores || 0);
+    saveData.atp += atpGain;
+    saveData.medals += medalGain;
+    saveData.evoCores = (saveData.evoCores || 0) + coreGain;
+    persistSave();
+    showResultModal(true, atpGain, medalGain, coreGain, isFirst);
+  } else {
+    SE.lose();
+    showResultModal(false, 0, 0, 0, false);
+  }
+}
+
+function showResultModal(isWin, atpGain, medalGain, coreGain, isFirst) {
+  const st = battleState;
+  const card = document.getElementById('resultCard');
+  const title = document.getElementById('resultTitle');
+  const stats = document.getElementById('resultStats');
+  card.classList.toggle('lose', !isWin);
+  title.textContent = isWin ? '🎉 VICTORY! 制圧完了！' : '💀 DEFEAT... 拠点陥落';
+  title.style.color = isWin ? '#fde047' : '#f87171';
+
+  const medalText = medalGain > 0 ? ` ／ 🧬+${medalGain} メダル` : '';
+  const coreText = coreGain > 0 ? ` ／ 💎+${coreGain} 進化コア` : '';
+  const unlockText = (isWin && isFirst && st.stage.unlockCap)
+    ? `<div style="color:#38bdf8; font-weight:900; margin-top:4px;">🔓 キャラのレベル上限が【Lv.${st.stage.unlockCap}】まで解放可能になりました！</div>`
+    : '';
+  stats.innerHTML = `
+    <div><strong>${st.stage.name}</strong></div>
+    ${isWin ? `<div style="color:#4ade80; font-weight:900; margin:4px 0;">${isFirst ? '🎁 初回クリア報酬！' : '🔁 周回クリア報酬'}：⚡+${atpGain} ATP${medalText}${coreText}</div>` : ''}
+    ${unlockText}
+    <div>⏱️ 経過時間：<strong>${Math.floor(st.elapsed)} 秒</strong></div>
+    <div>🧬 出撃：<strong>${st.totalSummoned} 体</strong> ／ 撃破：<strong>${st.totalDefeated} 体</strong></div>
+  `;
+  document.getElementById('resultModal').classList.add('show');
+}
+
+function updateBattleHUD() {
+  const st = battleState;
+  if (!st) return;
+
+  const maxAtp = getAtpMax(st.atpLv);
+  document.getElementById('atpText').textContent = `${Math.floor(st.atp)} / ${maxAtp}`;
+
+  const atpBtn = document.getElementById('btnAtpUpgrade');
+  const atpLvLabel = document.getElementById('atpLvLabel');
+  const atpCostLabel = document.getElementById('atpUpCostLabel');
+  if (st.atpLv >= st.maxAtpLv) {
+    atpLvLabel.textContent = `働き細胞 MAX`;
+    atpCostLabel.textContent = `Lv.${st.atpLv}`;
+    atpBtn.disabled = true;
+    atpBtn.classList.remove('ready-atp');
+  } else {
+    const upCost = getAtpUpgradeCost(st.atpLv);
+    atpLvLabel.textContent = `働き細胞 Lv.${st.atpLv}`;
+    atpCostLabel.textContent = `⚡${upCost}`;
+    const canUp = st.atp >= upCost;
+    atpBtn.disabled = !canUp;
+    atpBtn.classList.toggle('ready-atp', canUp);
+  }
+
+  const cannonBtn = document.getElementById('btnCannon');
+  const cannonPct = Math.floor(st.cannonCharge);
+  document.getElementById('cannonFill').style.height = `${cannonPct}%`;
+  document.getElementById('cannonPctLabel').textContent = cannonPct >= 100 ? '発射OK!' : `${cannonPct}%`;
+  cannonBtn.disabled = cannonPct < 100;
+  cannonBtn.classList.toggle('ready-cannon', cannonPct >= 100);
+
+  st.deck.forEach((u, idx) => {
+    const btn = document.getElementById(`unitBtn_${idx}`);
+    if (!btn || !u) return;
+    const cd = st.cooldowns[idx];
+    const ratio = cd > 0 ? cd / u.cd : 0;
+    document.getElementById(`unitCdOverlay_${idx}`).style.height = `${ratio * 100}%`;
+    document.getElementById(`unitCdBar_${idx}`).style.width = cd > 0 ? `${(1 - ratio) * 100}%` : '0%';
+    const canAfford = st.atp >= u.cost;
+    btn.classList.toggle('available', cd <= 0 && canAfford);
+    btn.classList.toggle('cooldown', cd > 0);
+    btn.classList.toggle('no-atp', cd <= 0 && !canAfford);
+  });
+}
+
+/* ============================================================================
+   5. Canvas 描画 & スプライト（全20種族対応）
+============================================================================ */
+function renderBattle() {
+  const canvas = document.getElementById('battleCanvas');
+  const ctx = canvas.getContext('2d');
+  const st = battleState;
+  if (!st) return;
+
+  ctx.clearRect(0, 0, WORLD_W, WORLD_H);
+
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, WORLD_H);
+  bgGrad.addColorStop(0, '#070f24');
+  bgGrad.addColorStop(0.55, '#13274a');
+  bgGrad.addColorStop(1, '#091124');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, WORLD_W, WORLD_H);
+
+  // 遠景のDNA二重らせん風ウェーブ
+  ctx.save();
+  ctx.lineWidth = 2;
+  for (let s = 0; s < 2; s++) {
+    ctx.strokeStyle = s === 0 ? 'rgba(56, 189, 248, 0.12)' : 'rgba(168, 85, 247, 0.10)';
+    ctx.beginPath();
+    for (let x = 0; x <= WORLD_W; x += 20) {
+      const y = 135 + Math.sin(x * 0.012 + st.elapsed * 0.7 + s * Math.PI) * 34;
+      if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // 遠景の浮遊細胞シルエット
+  for (let i = 0; i < 10; i++) {
+    const bx = ((i * 157 + st.elapsed * (8 + (i % 3) * 4)) % (WORLD_W + 60)) - 30;
+    const by = 55 + (i * 61) % (GROUND_Y - 100);
+    const br = 12 + (i % 4) * 7;
+    ctx.fillStyle = i % 2 === 0 ? 'rgba(56, 189, 248, 0.06)' : 'rgba(244, 63, 94, 0.05)';
+    ctx.beginPath();
+    ctx.arc(bx, by, br, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.strokeStyle = 'rgba(56, 189, 248, 0.05)';
+  ctx.lineWidth = 1;
+  for (let gx = 0; gx < WORLD_W; gx += 55) {
+    ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, GROUND_Y); ctx.stroke();
+  }
+
+  // 立体的な生体膜フロア
+  const floorGrad = ctx.createLinearGradient(0, GROUND_Y, 0, WORLD_H);
+  floorGrad.addColorStop(0, '#0284c7');
+  floorGrad.addColorStop(0.12, '#1e3a5f');
+  floorGrad.addColorStop(0.45, '#0f172a');
+  floorGrad.addColorStop(1, '#050811');
+  ctx.fillStyle = floorGrad;
+  ctx.fillRect(0, GROUND_Y, WORLD_W, WORLD_H - GROUND_Y);
+
+  ctx.strokeStyle = 'rgba(186, 230, 253, 0.7)';
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(0, GROUND_Y); ctx.lineTo(WORLD_W, GROUND_Y); ctx.stroke();
+
+  drawEnemyBase(ctx, ENEMY_BASE_X, GROUND_Y, st.enemyBaseHp, st.enemyBaseMaxHp, st.baseHitFlashEnemy > 0);
+  drawAllyBase(ctx, ALLY_BASE_X, GROUND_Y, st.allyBaseHp, st.allyBaseMaxHp, st.baseHitFlashAlly > 0);
+
+  const sorted = [...st.units].sort((a, b) => a.yOffset - b.yOffset);
+  sorted.forEach(ent => {
+    const bob = ent.kbTimer > 0 ? -Math.sin((ent.kbTimer / 0.28) * Math.PI) * 26 : Math.abs(Math.sin(ent.walkPhase)) * -4;
+    const drawY = GROUND_Y - ent.def.size * 0.72 + ent.yOffset + bob;
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    ctx.beginPath();
+    ctx.ellipse(ent.x, GROUND_Y + ent.yOffset + 2, ent.def.size * 0.75, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(ent.x, drawY);
+    const isEvo4 = ent.side === 'ally' && ent.def.lv >= 40 && ent.def.lv < 50;
+    const isEvo5 = ent.side === 'ally' && ent.def.lv >= 50;
+
+    // 背面オーラ（放射グラデーション発光）
+    if (isEvo4 || isEvo5) {
+      const auraR = ent.def.size * (isEvo5 ? 1.55 : 1.32);
+      const glow = ctx.createRadialGradient(0, 0, ent.def.size * 0.2, 0, 0, auraR);
+      if (isEvo5) {
+        glow.addColorStop(0, 'rgba(56, 189, 248, 0.55)');
+        glow.addColorStop(0.55, 'rgba(168, 85, 247, 0.32)');
+        glow.addColorStop(1, 'rgba(56, 189, 248, 0)');
+      } else {
+        glow.addColorStop(0, 'rgba(250, 204, 21, 0.48)');
+        glow.addColorStop(0.6, 'rgba(245, 158, 11, 0.22)');
+        glow.addColorStop(1, 'rgba(250, 204, 21, 0)');
+      }
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(0, 0, auraR + Math.sin(st.elapsed * 5) * 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    if (ent.atkAnim > 0) {
+      ctx.translate(Math.sin((ent.atkAnim / 0.24) * Math.PI) * 10 * ent.dir, 0);
+      ctx.rotate(ent.dir * 0.16);
+    } else if (ent.kbTimer > 0) {
+      ctx.rotate(-ent.dir * 0.35);
+    }
+    const evoScale = isEvo5 ? 1.1 : (isEvo4 ? 1.05 : 1.0);
+    drawUnitSprite(ctx, ent.def.shape, ent.def.color, (ent.def.size / 26) * evoScale, ent.walkPhase, ent.hitFlash > 0);
+
+    // 前面オーラ（周回する光粒子＆第5形態クラウン）
+    if (isEvo4 || isEvo5) {
+      const orbCount = isEvo5 ? 6 : 4;
+      const orbitR = ent.def.size * (isEvo5 ? 1.12 : 0.96);
+      for (let oi = 0; oi < orbCount; oi++) {
+        const ang = st.elapsed * (isEvo5 ? 3.2 : 2.2) + (oi / orbCount) * Math.PI * 2;
+        const ox = Math.cos(ang) * orbitR;
+        const oy = Math.sin(ang) * orbitR * 0.55;
+        ctx.fillStyle = isEvo5 ? (oi % 2 === 0 ? '#38bdf8' : '#e879f9') : '#fde047';
+        ctx.beginPath();
+        ctx.arc(ox, oy, isEvo5 ? 3.5 : 2.6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      if (isEvo5) {
+        ctx.fillStyle = '#facc15';
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.2;
+        const cy = -ent.def.size * 0.98;
+        ctx.beginPath();
+        ctx.moveTo(-8, cy + 4); ctx.lineTo(-10, cy - 5); ctx.lineTo(-4, cy);
+        ctx.lineTo(0, cy - 7); ctx.lineTo(4, cy); ctx.lineTo(10, cy - 5);
+        ctx.lineTo(8, cy + 4); ctx.closePath();
+        ctx.fill(); ctx.stroke();
+      }
+    }
+    ctx.restore();
+
+    if (ent.side === 'enemy' && ent.def.trait && TRAITS_MASTER[ent.def.trait]) {
+      const tr = TRAITS_MASTER[ent.def.trait];
+      ctx.fillStyle = tr.color;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(ent.x, drawY - ent.def.size - 4, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    if (ent.hp < ent.maxHp) {
+      const bw = Math.max(28, ent.def.size * 1.2);
+      const bx = ent.x - bw / 2;
+      const by = drawY - ent.def.size - 12;
+      ctx.fillStyle = 'rgba(2, 6, 23, 0.8)';
+      ctx.fillRect(bx, by, bw, 5);
+      ctx.fillStyle = ent.side === 'ally' ? '#22c55e' : '#ef4444';
+      ctx.fillRect(bx, by, bw * (ent.hp / ent.maxHp), 5);
+    }
+  });
+
+  if (st.cannonBeamTimer > 0) {
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, st.cannonBeamTimer / 0.3);
+    const beamGrad = ctx.createLinearGradient(0, GROUND_Y - 95, 0, GROUND_Y - 15);
+    beamGrad.addColorStop(0, 'rgba(56, 189, 248, 0.1)');
+    beamGrad.addColorStop(0.5, 'rgba(186, 230, 253, 0.95)');
+    beamGrad.addColorStop(1, 'rgba(56, 189, 248, 0.1)');
+    ctx.fillStyle = beamGrad;
+    ctx.fillRect(0, GROUND_Y - 98, ALLY_BASE_X - 24, 82);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, GROUND_Y - 64, ALLY_BASE_X - 24, 16);
+    ctx.restore();
+  }
+
+  st.effects.forEach(ef => {
+    const p = ef.life / ef.maxLife;
+    ctx.save();
+    ctx.globalAlpha = p;
+    if (ef.type === 'slash') {
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(ef.x2 - 14, ef.y2 - 14); ctx.lineTo(ef.x2 + 14, ef.y2 + 14);
+      ctx.moveTo(ef.x2 + 14, ef.y2 - 14); ctx.lineTo(ef.x2 - 14, ef.y2 + 14);
+      ctx.stroke();
+    } else if (ef.type === 'shot') {
+      ctx.strokeStyle = ef.color; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(ef.x1, ef.y1); ctx.lineTo(ef.x2, ef.y2); ctx.stroke();
+      ctx.fillStyle = '#fde047';
+      ctx.beginPath(); ctx.arc(ef.x2, ef.y2, 12 * p, 0, Math.PI * 2); ctx.fill();
+    } else if (ef.type === 'burst') {
+      ctx.strokeStyle = ef.color; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(ef.x, ef.y, ef.radius * (1.8 - p * 0.8), 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.restore();
+  });
+
+  st.popups.forEach(p => {
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, p.life / p.maxLife * 1.4);
+    ctx.font = '900 15px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.strokeStyle = '#020617'; ctx.lineWidth = 3;
+    ctx.strokeText(p.text, p.x, p.y);
+    ctx.fillStyle = p.color;
+    ctx.fillText(p.text, p.x, p.y);
+    ctx.restore();
+  });
+}
+
+function drawAllyBase(ctx, x, gy, hp, maxHp, flash) {
+  ctx.save(); ctx.translate(x, gy);
+  ctx.fillStyle = flash ? '#ffffff' : '#0284c7';
+  ctx.strokeStyle = '#bae6fd'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.roundRect(-42, -125, 84, 125, [18, 18, 0, 0]); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#38bdf8'; ctx.beginPath(); ctx.arc(0, -78, 22, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#e0f2fe'; ctx.beginPath(); ctx.arc(-6, -84, 7, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#1e293b'; ctx.fillRect(-54, -64, 18, 16);
+  drawBaseHpBar(ctx, 0, -148, hp, maxHp, '#22c55e', '自拠点');
+  ctx.restore();
+}
+
+function drawEnemyBase(ctx, x, gy, hp, maxHp, flash) {
+  ctx.save(); ctx.translate(x, gy);
+  ctx.fillStyle = flash ? '#ffffff' : '#7f1d1d';
+  ctx.strokeStyle = '#fda4af'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.roundRect(-42, -122, 84, 122, [22, 22, 0, 0]); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#ef4444';
+  for (let i = -24; i <= 24; i += 24) {
+    ctx.beginPath(); ctx.moveTo(i - 10, -122); ctx.lineTo(i, -142); ctx.lineTo(i + 10, -122); ctx.fill();
+  }
+  ctx.fillStyle = '#fde047'; ctx.beginPath(); ctx.arc(0, -68, 16, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.ellipse(2, -68, 5, 11, 0, 0, Math.PI * 2); ctx.fill();
+  drawBaseHpBar(ctx, 0, -162, hp, maxHp, '#ef4444', '敵拠点');
+  ctx.restore();
+}
+
+function drawBaseHpBar(ctx, x, y, hp, maxHp, color, label) {
+  const w = 96;
+  ctx.fillStyle = 'rgba(2, 6, 23, 0.85)'; ctx.fillRect(x - w / 2, y, w, 12);
+  ctx.fillStyle = color; ctx.fillRect(x - w / 2 + 1, y + 1, (w - 2) * Math.max(0, hp / maxHp), 10);
+  ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1.5; ctx.strokeRect(x - w / 2, y, w, 12);
+  ctx.font = '900 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#f8fafc';
+  ctx.fillText(`${label} ${Math.ceil(hp)}`, x, y - 4);
+}
+
+function drawUnitSprite(ctx, shape, color, scale, phase, flash) {
+  ctx.save();
+  ctx.scale(scale, scale);
+  const fillCol = flash ? '#ffffff' : color;
+
+  if (shape === 'ecoli') {
+    ctx.strokeStyle = '#86efac'; ctx.lineWidth = 2.5;
+    for (let i = -1; i <= 1; i++) {
+      ctx.beginPath(); ctx.moveTo(16, i * 6);
+      ctx.quadraticCurveTo(26, i * 8 + Math.sin(phase + i) * 5, 34, i * 6); ctx.stroke();
+    }
+    ctx.fillStyle = fillCol; ctx.strokeStyle = '#dcfce7'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.roundRect(-20, -13, 38, 26, 13); ctx.fill(); ctx.stroke();
+    drawCuteEyes(ctx, -8, -2, false);
+  } else if (shape === 'natto') {
+    ctx.strokeStyle = 'rgba(253, 224, 71, 0.65)'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(0, 0, 24, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = fillCol; ctx.strokeStyle = '#fef08a'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.roundRect(-21, -18, 42, 36, 12); ctx.fill(); ctx.stroke();
+    drawCuteEyes(ctx, -6, -3, false);
+  } else if (shape === 'shell') {
+    ctx.fillStyle = fillCol; ctx.strokeStyle = '#fef3c7'; ctx.lineWidth = 3;
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2;
+      const px = Math.cos(a) * 22, py = Math.sin(a) * 19;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    drawCuteEyes(ctx, -5, -2, false);
+  } else if (shape === 'ciliate') {
+    ctx.strokeStyle = '#7dd3fc'; ctx.lineWidth = 2;
+    for (let a = 0; a < Math.PI * 2; a += Math.PI / 6) {
+      const w = Math.sin(phase + a * 2) * 3;
+      ctx.beginPath(); ctx.moveTo(Math.cos(a) * 20, Math.sin(a) * 14);
+      ctx.lineTo(Math.cos(a) * (25 + w), Math.sin(a) * (18 + w)); ctx.stroke();
+    }
+    ctx.fillStyle = fillCol; ctx.strokeStyle = '#e0f2fe'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.ellipse(0, 0, 21, 14, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    drawCuteEyes(ctx, -7, -2, false);
+  } else if (shape === 'leaf') {
+    ctx.fillStyle = fillCol; ctx.strokeStyle = '#d1fae5'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.ellipse(0, 0, 22, 13, -0.15, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    drawCuteEyes(ctx, -6, -2, false);
+  } else if (shape === 'neuron') {
+    ctx.strokeStyle = '#fef08a'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(10, 0); ctx.lineTo(28, Math.sin(phase * 2) * 4); ctx.stroke();
+    ctx.fillStyle = fillCol; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const r = i % 2 === 0 ? 22 : 11, a = (i * Math.PI) / 5;
+      const px = Math.cos(a) * r, py = Math.sin(a) * r;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    drawCuteEyes(ctx, -4, -1, false);
+  } else if (shape === 'star') {
+    ctx.fillStyle = fillCol; ctx.strokeStyle = '#fce7f3'; ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    for (let i = 0; i < 12; i++) {
+      const r = i % 2 === 0 ? 22 : 13, a = (i * Math.PI) / 6;
+      const px = Math.cos(a) * r, py = Math.sin(a) * r;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    drawCuteEyes(ctx, -4, -1, false);
+  } else if (shape === 'phage') {
+    ctx.strokeStyle = '#f9a8d4'; ctx.lineWidth = 2.5;
+    [-1, 1].forEach(s => {
+      ctx.beginPath(); ctx.moveTo(0, 6); ctx.lineTo(s * 14, 14); ctx.lineTo(s * 18, 24); ctx.stroke();
+    });
+    ctx.fillStyle = '#f9a8d4'; ctx.fillRect(-3, -4, 6, 14);
+    ctx.fillStyle = fillCol; ctx.strokeStyle = '#fce7f3'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(0, -24); ctx.lineTo(15, -13); ctx.lineTo(12, 2); ctx.lineTo(-12, 2); ctx.lineTo(-15, -13);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    drawCuteEyes(ctx, -2, -10, false);
+  } else if (shape === 'blob' || shape === 'macrophage') {
+    ctx.fillStyle = fillCol; ctx.strokeStyle = '#ffedd5'; ctx.lineWidth = 3;
+    ctx.beginPath();
+    for (let i = 0; i <= 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      const r = 23 + Math.sin(a * 3 + phase) * 3;
+      const px = Math.cos(a) * r, py = Math.sin(a) * r;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    drawCuteEyes(ctx, -7, -4, false);
+  } else if (shape === 'bear') {
+    ctx.fillStyle = fillCol; ctx.strokeStyle = '#fef9c3'; ctx.lineWidth = 2.8;
+    ctx.beginPath(); ctx.roundRect(-22, -16, 44, 32, 16); ctx.fill(); ctx.stroke();
+    drawCuteEyes(ctx, -7, -2, false);
+  } else if (shape === 'slime') {
+    ctx.fillStyle = fillCol; ctx.strokeStyle = '#e9d5ff'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(0, 2, 18, Math.PI, 0);
+    ctx.quadraticCurveTo(18, 16, 0, 16); ctx.quadraticCurveTo(-18, 16, -18, 2);
+    ctx.fill(); ctx.stroke();
+    drawCuteEyes(ctx, 6, 0, true);
+  } else if (shape === 'virus' || shape === 'boss') {
+    const spikes = shape === 'boss' ? 12 : 8;
+    const rOuter = shape === 'boss' ? 28 : 22;
+    const rInner = shape === 'boss' ? 20 : 14;
+    ctx.strokeStyle = '#fda4af'; ctx.lineWidth = 3;
+    for (let i = 0; i < spikes; i++) {
+      const a = (i / spikes) * Math.PI * 2 + phase * 0.2;
+      ctx.beginPath(); ctx.moveTo(Math.cos(a) * rInner, Math.sin(a) * rInner);
+      ctx.lineTo(Math.cos(a) * rOuter, Math.sin(a) * rOuter); ctx.stroke();
+      ctx.fillStyle = '#fde047';
+      ctx.beginPath(); ctx.arc(Math.cos(a) * rOuter, Math.sin(a) * rOuter, 3.5, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.fillStyle = fillCol;
+    ctx.beginPath(); ctx.arc(0, 0, rInner, 0, Math.PI * 2); ctx.fill();
+    drawCuteEyes(ctx, 5, -2, true);
+  } else if (shape === 'coccus') {
+    ctx.fillStyle = fillCol; ctx.strokeStyle = '#fecaca'; ctx.lineWidth = 3;
+    [-8, 8].forEach(cx => {
+      ctx.beginPath(); ctx.arc(cx, 0, 14, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    });
+    drawCuteEyes(ctx, 7, -2, true);
+  }
+  ctx.restore();
+}
+
+function drawCuteEyes(ctx, x, y, angry) {
+  ctx.fillStyle = '#0f172a';
+  ctx.beginPath(); ctx.arc(x - 4, y, 2.7, 0, Math.PI * 2); ctx.arc(x + 5, y, 2.7, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.arc(x - 5, y - 1, 1, 0, Math.PI * 2); ctx.arc(x + 4, y - 1, 1, 0, Math.PI * 2); ctx.fill();
+  if (angry) {
+    ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x - 7, y - 5); ctx.lineTo(x - 1, y - 3); ctx.moveTo(x + 8, y - 5); ctx.lineTo(x + 2, y - 3); ctx.stroke();
+  }
+}
+
+/* ============================================================================
+   6. 管理者テストコンソール（パスコード保護）
+============================================================================ */
+let adminTapCount = 0;
+let adminTapTimer = null;
+
+function handleSecretAdminTap() {
+  adminTapCount++;
+  clearTimeout(adminTapTimer);
+  adminTapTimer = setTimeout(() => { adminTapCount = 0; }, 1800);
+  if (adminTapCount >= 7) {
+    adminTapCount = 0;
+    const pass = prompt('管理者パスコードを入力してください：');
+    if (pass === 'bio2026') {
+      openAdminModal();
+    } else if (pass !== null) {
+      showToast('パスコードが違います');
+    }
+  }
+}
+
+function openAdminModal() {
+  document.getElementById('adminModal').classList.add('show');
+}
+
+function closeAdminModal() {
+  document.getElementById('adminModal').classList.remove('show');
+}
+
+function adminAddAtp(amount) {
+  saveData.atp += amount;
+  persistSave();
+  showToast(`⚡ ATP +${amount.toLocaleString()} 付与！`);
+}
+
+function adminAddMedals(amount) {
+  saveData.medals += amount;
+  persistSave();
+  showToast(`🧬 DNAメダル +${amount} 付与！`);
+}
+
+function adminAddCores(amount) {
+  saveData.evoCores = (saveData.evoCores || 0) + amount;
+  persistSave();
+  showToast(`💎 進化コア +${amount} 付与！`);
+}
+
+function adminUnlockAllUnits() {
+  UNITS_MASTER.forEach((u, idx) => {
+    const t1 = TRAIT_KEYS[idx % TRAIT_KEYS.length];
+    const t2 = TRAIT_KEYS[(idx + 2) % TRAIT_KEYS.length];
+    if (!saveData.owned[u.id]) {
+      saveData.owned[u.id] = { lv: 20, plus: 0, cap: 20, rank: 'MR', traits: [t1, t2] };
+    } else {
+      if (saveData.owned[u.id].lv < 20) saveData.owned[u.id].lv = 20;
+      saveData.owned[u.id].cap = Math.max(20, saveData.owned[u.id].cap || 20);
+      saveData.owned[u.id].rank = 'MR';
+      if (!Array.isArray(saveData.owned[u.id].traits) || saveData.owned[u.id].traits.length < 2) {
+        saveData.owned[u.id].traits = [t1, t2];
+      }
+    }
+  });
+  persistSave();
+  showToast('🧬 全20種族（MR・Lv.20・2属性対応）を解放しました！');
+}
+
+function adminUnlockAllStages() {
+  getAllStagesFlat().forEach(st => { saveData.cleared[st.id] = true; });
+  persistSave();
+  showToast('🔓 全ステージを解放しました！');
+}
+
+function adminMaxFacilities() {
+  saveData.facilities = { atpRate: 20, baseHp: 20, cannon: 20 };
+  persistSave();
+  showToast('🏛️ 研究所施設をすべてMAX（Lv.20）にしました！');
+}
+
+function adminResetSave() {
+  saveData = createDefaultSave();
+  persistSave();
+  closeAdminModal();
+  goHome();
+  showToast('🗑️ セーブデータを初期化しました');
+}
+
+// 起動
+loadSave();
+syncCurrencyUI();
+</script>
+</body>
+</html>
