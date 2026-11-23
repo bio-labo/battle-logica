@@ -1661,12 +1661,12 @@ function makeUnitKey(baseId, rank) {
 function sortOwnedKeys(keys) {
   return [...keys].sort((a, b) => {
     const pa = parseUnitKey(a), pb = parseUnitKey(b);
-    const ia = UNITS_MASTER.findIndex(u => u.id === pa.baseId);
-    const ib = UNITS_MASTER.findIndex(u => u.id === pb.baseId);
-    if (ia !== ib) return ia - ib;
     const ra = RANKS_MASTER[(saveData.owned[a] && saveData.owned[a].rank) || pa.rank || 'N']?.order ?? 0;
     const rb = RANKS_MASTER[(saveData.owned[b] && saveData.owned[b].rank) || pb.rank || 'N']?.order ?? 0;
-    return rb - ra;
+    if (rb !== ra) return rb - ra;
+    const ia = UNITS_MASTER.findIndex(u => u.id === pa.baseId);
+    const ib = UNITS_MASTER.findIndex(u => u.id === pb.baseId);
+    return ia - ib;
   });
 }
 
@@ -2413,6 +2413,12 @@ function renderUpgradeList() {
       const canMoreInGlobal = cap < globalMax;
       const canUnlock = isLv20Ready && canMoreInGlobal && (saveData.evoCores || 0) >= 1;
       const pct = Math.min(100, Math.round((st.lv / cap) * 100));
+      const rate = CONVERT_RATES[st.rank] || CONVERT_RATES.N;
+      const isPlusConv = (st.plus || 0) > 0;
+      const inAnyDeck = !isPlusConv && isUnitInAnyDeck(uid);
+      const isLastOne = !isPlusConv && Object.keys(saveData.owned).length <= 1;
+      const convBlocked = inAnyDeck || isLastOne;
+      const convPrefix = isPlusConv ? '+1還元' : '還元';
 
       let unlockBtnHtml = '';
       if (!isAbsMax) {
@@ -2437,6 +2443,10 @@ function renderUpgradeList() {
           </div>
           <div class="upgrade-stats">HP: ${st.hp} ｜ 攻撃: ${st.atk} ｜ ⚡${st.cost}</div>
           <div style="font-size:0.68rem; color:#bae6fd; font-weight:800; margin-top:2px;">特効: ${formatTraitsText(st.traits)}</div>
+          <div style="display:flex; gap:5px; margin-top:6px; flex-wrap:wrap;">
+            <button class="hud-btn" style="font-size:0.64rem; padding:3px 7px; border-color:rgba(250,204,21,0.55); color:#fde047; ${convBlocked ? 'opacity:0.45;' : ''}" onclick="convertOwnedUnit('${uid}','atp')">${convPrefix} ⚡+${rate.atp}</button>
+            <button class="hud-btn" style="font-size:0.64rem; padding:3px 7px; border-color:rgba(192,132,252,0.55); color:#e9d5ff; ${convBlocked ? 'opacity:0.45;' : ''}" onclick="convertOwnedUnit('${uid}','medal')">${convPrefix} 🧬+${rate.medal}</button>
+          </div>
         </div>
         <div style="display:flex; flex-direction:column; gap:5px; flex-shrink:0;">
           <button class="btn-lvup" ${canUp ? '' : 'disabled'} onclick="upgradeChar('${uid}')">
@@ -2498,6 +2508,56 @@ function upgradeChar(uid) {
   if (ow.lv === 5 || ow.lv === 10 || ow.lv === 40 || ow.lv === 50) {
     showToast(`✨ ${getUnitComputedStats(uid).dispName} に進化した！`);
   }
+  persistSave();
+  renderUpgradeList();
+}
+
+const CONVERT_RATES = {
+  N:  { atp: 80,   medal: 1 },
+  R:  { atp: 160,  medal: 2 },
+  SR: { atp: 350,  medal: 4 },
+  UR: { atp: 750,  medal: 6 },
+  LR: { atp: 1500, medal: 10 },
+  XR: { atp: 3000, medal: 15 },
+  MR: { atp: 6000, medal: 25 }
+};
+
+function isUnitInAnyDeck(uid) {
+  return (saveData.presets || []).some(p => Array.isArray(p.deck) && p.deck.includes(uid));
+}
+
+function convertOwnedUnit(uid, mode) {
+  const ow = saveData.owned[uid];
+  if (!ow) return;
+  const st = getUnitComputedStats(uid);
+  const rate = CONVERT_RATES[st.rank] || CONVERT_RATES.N;
+  const hasPlus = (ow.plus || 0) > 0;
+
+  if (!hasPlus) {
+    if (Object.keys(saveData.owned).length <= 1) {
+      showToast('最後の1体は変換できません！');
+      return;
+    }
+    if (isUnitInAnyDeck(uid)) {
+      showToast('編成中のキャラは変換できません（先に編成から外してください）');
+      return;
+    }
+    if (st.rankInfo.order >= 3) {
+      if (!confirm(`${st.rankInfo.label} ${st.dispName}（Lv.${st.lv}）を完全に還元しますか？`)) return;
+    }
+    delete saveData.owned[uid];
+  } else {
+    ow.plus -= 1;
+  }
+
+  if (mode === 'medal') {
+    saveData.medals += rate.medal;
+    showToast(`🧬 ${st.dispName} (${st.rank}) を 🧬+${rate.medal} メダルに変換！`);
+  } else {
+    saveData.atp += rate.atp;
+    showToast(`⚡ ${st.dispName} (${st.rank}) を ⚡+${rate.atp} ATPに変換！`);
+  }
+  SE.atpUp();
   persistSave();
   renderUpgradeList();
 }
