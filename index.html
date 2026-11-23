@@ -1647,16 +1647,39 @@ function rollGachaRank() {
 const MAX_PRESETS = 6;
 const PRESET_UNLOCK_COSTS = [0, 0, 500, 1200, 2500, 5000];
 
+function parseUnitKey(key) {
+  if (!key || typeof key !== 'string') return { baseId: '', rank: null };
+  const idx = key.indexOf('__');
+  if (idx === -1) return { baseId: key, rank: null };
+  return { baseId: key.slice(0, idx), rank: key.slice(idx + 2) };
+}
+
+function makeUnitKey(baseId, rank) {
+  return `${baseId}__${rank || 'N'}`;
+}
+
+function sortOwnedKeys(keys) {
+  return [...keys].sort((a, b) => {
+    const pa = parseUnitKey(a), pb = parseUnitKey(b);
+    const ia = UNITS_MASTER.findIndex(u => u.id === pa.baseId);
+    const ib = UNITS_MASTER.findIndex(u => u.id === pb.baseId);
+    if (ia !== ib) return ia - ib;
+    const ra = RANKS_MASTER[(saveData.owned[a] && saveData.owned[a].rank) || pa.rank || 'N']?.order ?? 0;
+    const rb = RANKS_MASTER[(saveData.owned[b] && saveData.owned[b].rank) || pb.rank || 'N']?.order ?? 0;
+    return rb - ra;
+  });
+}
+
 function createDefaultSave() {
-  const starterDeck = ['ecoli', 'natto', 'ciliate', null, null, null, null, null, null, null];
+  const starterDeck = ['ecoli__N', 'natto__R', 'ciliate__N', null, null, null, null, null, null, null];
   return {
     atp: 600,
     medals: 50,
     evoCores: 0,
     owned: {
-      ecoli:   { lv: 1, plus: 0, cap: 20, rank: 'N', traits: ['bacteria'] },
-      natto:   { lv: 1, plus: 0, cap: 20, rank: 'R', traits: ['virus'] },
-      ciliate: { lv: 1, plus: 0, cap: 20, rank: 'N', traits: ['fungus'] }
+      'ecoli__N':   { baseId: 'ecoli',   lv: 1, plus: 0, cap: 20, rank: 'N', traits: ['bacteria'] },
+      'natto__R':   { baseId: 'natto',   lv: 1, plus: 0, cap: 20, rank: 'R', traits: ['virus'] },
+      'ciliate__N': { baseId: 'ciliate', lv: 1, plus: 0, cap: 20, rank: 'N', traits: ['fungus'] }
     },
     presets: [
       { name: '編成1', deck: [...starterDeck] },
@@ -1670,24 +1693,48 @@ function createDefaultSave() {
   };
 }
 
+function migrateSaveData(data, parsedRaw) {
+  // 旧セーブデータの deck -> presets 移行
+  if (!Array.isArray(data.presets) || data.presets.length < 2) {
+    const legacyDeck = parsedRaw && Array.isArray(parsedRaw.deck) && parsedRaw.deck.length === 10
+      ? parsedRaw.deck
+      : createDefaultSave().presets[0].deck;
+    data.presets = [
+      { name: '編成1', deck: [...legacyDeck] },
+      { name: '編成2', deck: [...legacyDeck] }
+    ];
+  }
+  // 旧セーブデータの種族単位キー（ecoli等） -> 種族×ランクキー（ecoli__LR等）へ移行
+  const newOwned = {};
+  const keyMap = {};
+  Object.keys(data.owned || {}).forEach(oldKey => {
+    const ow = data.owned[oldKey];
+    if (!ow) return;
+    const parsedKey = parseUnitKey(oldKey);
+    const def = UNITS_MASTER.find(u => u.id === parsedKey.baseId);
+    if (!def) return;
+    const rank = ow.rank || parsedKey.rank || def.rarity || 'N';
+    const newKey = parsedKey.rank ? oldKey : makeUnitKey(parsedKey.baseId, rank);
+    newOwned[newKey] = { ...ow, baseId: parsedKey.baseId, rank };
+    keyMap[oldKey] = newKey;
+  });
+  data.owned = newOwned;
+  data.presets.forEach(p => {
+    if (Array.isArray(p.deck)) {
+      p.deck = p.deck.map(id => (id ? (keyMap[id] || id) : null));
+    }
+  });
+  data.unlockedPresets = Math.max(2, Math.min(MAX_PRESETS, data.unlockedPresets || 2));
+  data.activePreset = Math.max(0, Math.min(data.unlockedPresets - 1, data.activePreset || 0));
+  return data;
+}
+
 function loadSave() {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      saveData = Object.assign(createDefaultSave(), parsed);
-      // 旧セーブデータの deck -> presets 移行
-      if (!Array.isArray(saveData.presets) || saveData.presets.length < 2) {
-        const legacyDeck = Array.isArray(parsed.deck) && parsed.deck.length === 10
-          ? parsed.deck
-          : createDefaultSave().presets[0].deck;
-        saveData.presets = [
-          { name: '編成1', deck: [...legacyDeck] },
-          { name: '編成2', deck: [...legacyDeck] }
-        ];
-      }
-      saveData.unlockedPresets = Math.max(2, Math.min(MAX_PRESETS, saveData.unlockedPresets || 2));
-      saveData.activePreset = Math.max(0, Math.min(saveData.unlockedPresets - 1, saveData.activePreset || 0));
+      saveData = migrateSaveData(Object.assign(createDefaultSave(), parsed), parsed);
       return;
     }
   } catch (e) {}
@@ -1715,15 +1762,17 @@ function resetSaveData() {
 }
 
 function getUnitDef(id) {
-  return UNITS_MASTER.find(u => u.id === id);
+  const { baseId } = parseUnitKey(id);
+  return UNITS_MASTER.find(u => u.id === baseId);
 }
 
 function getUnitComputedStats(id) {
-  const def = getUnitDef(id);
-  const ow = saveData.owned[id] || { lv: 1, plus: 0, cap: 20, rank: 'N', traits: ['bacteria'] };
-  const rankKey = ow.rank || def.rarity || 'N';
+  const { baseId, rank: keyRank } = parseUnitKey(id);
+  const def = getUnitDef(baseId);
+  const ow = saveData.owned[id] || { lv: 1, plus: 0, cap: 20, rank: keyRank || 'N', traits: ['bacteria'] };
+  const rankKey = ow.rank || keyRank || def.rarity || 'N';
   const rankInfo = RANKS_MASTER[rankKey] || RANKS_MASTER.N;
-  const traits = Array.isArray(ow.traits) && ow.traits.length > 0 ? ow.traits : [TRAIT_KEYS[id.length % TRAIT_KEYS.length]];
+  const traits = Array.isArray(ow.traits) && ow.traits.length > 0 ? ow.traits : [TRAIT_KEYS[baseId.length % TRAIT_KEYS.length]];
   const mult = (1 + (ow.lv - 1) * 0.04 + (ow.plus || 0) * 0.02) * rankInfo.mult;
   let dispName = def.name;
   if (ow.lv >= 50) dispName = def.evo5 || def.evo3;
@@ -1732,6 +1781,8 @@ function getUnitComputedStats(id) {
   else if (ow.lv >= 5) dispName = def.evo2;
   return {
     ...def,
+    id,
+    baseId,
     lv: ow.lv,
     plus: ow.plus || 0,
     rank: rankKey,
@@ -1825,6 +1876,10 @@ function switchScreen(id) {
   document.getElementById(id).classList.add('active');
 }
 
+function getOwnedSpeciesCount() {
+  return new Set(Object.keys(saveData.owned || {}).map(k => parseUnitKey(k).baseId)).size;
+}
+
 function syncCurrencyUI() {
   document.getElementById('homeAtp').textContent = saveData.atp.toLocaleString();
   document.getElementById('homeMedals').textContent = saveData.medals.toLocaleString();
@@ -1832,7 +1887,7 @@ function syncCurrencyUI() {
   document.querySelectorAll('.sync-medals').forEach(el => el.textContent = saveData.medals.toLocaleString());
   document.querySelectorAll('.sync-cores').forEach(el => el.textContent = (saveData.evoCores || 0).toLocaleString());
 
-  document.getElementById('statOwnedCount').textContent = `${Object.keys(saveData.owned).length} / ${UNITS_MASTER.length}`;
+  document.getElementById('statOwnedCount').textContent = `${getOwnedSpeciesCount()} / ${UNITS_MASTER.length}`;
   const totalSt = getAllStagesFlat().length;
   const clearedCnt = Object.keys(saveData.cleared).filter(k => saveData.cleared[k]).length;
   document.getElementById('statClearedCount').textContent = `${clearedCnt} / ${totalSt}`;
@@ -2108,7 +2163,7 @@ function unlockPresetSlot() {
   while (saveData.presets.length < saveData.unlockedPresets) {
     saveData.presets.push({
       name: `編成${saveData.presets.length + 1}`,
-      deck: ['ecoli', 'natto', 'ciliate', null, null, null, null, null, null, null]
+      deck: ['ecoli__N', 'natto__R', 'ciliate__N', null, null, null, null, null, null, null]
     });
   }
   saveData.activePreset = saveData.unlockedPresets - 1;
@@ -2204,7 +2259,7 @@ function renderFormation() {
 
   const ownedGrid = document.getElementById('formationOwnedGrid');
   ownedGrid.innerHTML = '';
-  const filteredIds = Object.keys(saveData.owned).filter(uid => {
+  const filteredIds = sortOwnedKeys(Object.keys(saveData.owned)).filter(uid => {
     if (formationRoleFilter === 'all') return true;
     const def = getUnitDef(uid);
     return def && def.gachaCat === formationRoleFilter;
@@ -2332,7 +2387,7 @@ function renderUpgradeList() {
       <button class="hud-btn ${upgradeRoleFilter === c.id ? 'active' : ''}" onclick="setUpgradeRoleFilter('${c.id}')">${c.label}</button>
     `).join('');
 
-    const uids = Object.keys(saveData.owned).filter(uid => {
+    const uids = sortOwnedKeys(Object.keys(saveData.owned)).filter(uid => {
       if (upgradeRoleFilter === 'all') return true;
       const def = getUnitDef(uid);
       return def && def.gachaCat === upgradeRoleFilter;
@@ -2563,23 +2618,19 @@ function pullGacha(catId, count) {
     const picked = pool[Math.floor(Math.random() * pool.length)];
     const rolledRank = rollGachaRank();
     const rolledTrait = rollRandomTrait();
-    const isNew = !saveData.owned[picked.id];
+    const unitKey = makeUnitKey(picked.id, rolledRank);
+    const isNew = !saveData.owned[unitKey];
     let rankUp = false;
     let traitAdded = false;
     let atpBonus = 0;
 
     if (isNew) {
-      saveData.owned[picked.id] = { lv: 1, plus: 0, cap: 20, rank: rolledRank, traits: [rolledTrait] };
+      saveData.owned[unitKey] = { baseId: picked.id, lv: 1, plus: 0, cap: 20, rank: rolledRank, traits: [rolledTrait] };
       const deck = getActiveDeck();
       const emptyIdx = deck.indexOf(null);
-      if (emptyIdx !== -1) deck[emptyIdx] = picked.id;
+      if (emptyIdx !== -1) deck[emptyIdx] = unitKey;
     } else {
-      const curOw = saveData.owned[picked.id];
-      const curRankKey = curOw.rank || picked.rarity || 'N';
-      if (RANKS_MASTER[rolledRank].order > RANKS_MASTER[curRankKey].order) {
-        curOw.rank = rolledRank;
-        rankUp = true;
-      }
+      const curOw = saveData.owned[unitKey];
       if (!Array.isArray(curOw.traits)) curOw.traits = [rollRandomTrait()];
       if (!curOw.traits.includes(rolledTrait) && curOw.traits.length < 2) {
         curOw.traits.push(rolledTrait);
@@ -2674,7 +2725,7 @@ function renderMenuTab() {
   if (!wrap) return;
 
   if (currentMenuTab === 'hub') {
-    const ownedCount = Object.keys(saveData.owned).length;
+    const ownedCount = getOwnedSpeciesCount();
     wrap.innerHTML = `
       <div style="display:flex; flex-direction:column; gap:12px;">
         <button class="nav-card nav-formation" style="border-color:#38bdf8; border-bottom-color:#0284c7; background:linear-gradient(135deg, rgba(2,132,199,0.28), #0f172a);" onclick="switchMenuTab('dex')">
@@ -2706,7 +2757,7 @@ function renderMenuTab() {
   }
 
   if (currentMenuTab === 'dex') {
-    const ownedCount = Object.keys(saveData.owned).length;
+    const ownedCount = getOwnedSpeciesCount();
     const cats = [
       { id: 'all', label: 'すべて' },
       { id: 'wall', label: '🛡️ 壁' },
@@ -2720,7 +2771,7 @@ function renderMenuTab() {
 
     wrap.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
-        <div style="font-size:0.9rem; font-weight:900; color:#38bdf8;">📘 バイオ・ロジカ 図鑑（所持: ${ownedCount} / ${UNITS_MASTER.length}）</div>
+        <div style="font-size:0.9rem; font-weight:900; color:#38bdf8;">📘 バイオ・ロジカ 図鑑（種族: ${ownedCount} / ${UNITS_MASTER.length}）</div>
         <div style="display:flex; gap:6px; flex-wrap:wrap;">
           ${cats.map(c => `<button class="hud-btn ${dexFilterCat === c.id ? 'active' : ''}" onclick="setDexFilter('${c.id}')">${c.label}</button>`).join('')}
         </div>
@@ -2730,17 +2781,19 @@ function renderMenuTab() {
 
     const grid = document.getElementById('dexGridContainer');
     filtered.forEach(u => {
-      const isOwned = !!saveData.owned[u.id];
-      const st = isOwned ? getUnitComputedStats(u.id) : null;
+      const variants = sortOwnedKeys(Object.keys(saveData.owned).filter(k => parseUnitKey(k).baseId === u.id));
+      const isOwned = variants.length > 0;
+      const st = isOwned ? getUnitComputedStats(variants[0]) : null;
+      const rankListText = isOwned ? variants.map(v => RANKS_MASTER[saveData.owned[v].rank || 'N']?.label || '').join(' ') : '';
       const card = document.createElement('div');
       card.className = `dex-card ${isOwned ? '' : 'unowned'}`;
       card.style.borderColor = isOwned ? st.rankInfo.color : '';
       card.innerHTML = `
         <canvas id="dexIcon_${u.id}" width="64" height="50"></canvas>
         <div style="font-size:0.86rem; font-weight:900;">${isOwned ? st.dispName : u.name}</div>
-        <div style="font-size:0.7rem; color:${isOwned ? st.rankInfo.color : '#38bdf8'}; font-weight:900;">${isOwned ? st.rankInfo.label : '未所持'} ｜ ${u.roleLabel}</div>
+        <div style="font-size:0.7rem; color:${isOwned ? st.rankInfo.color : '#38bdf8'}; font-weight:900;">${isOwned ? `所持: ${rankListText}` : '未所持'} ｜ ${u.roleLabel}</div>
         ${isOwned ? `<div style="font-size:0.66rem; color:#bae6fd; font-weight:800;">特効: ${formatTraitsText(st.traits)}</div>` : ''}
-        <div style="font-size:0.68rem; color:#fde047; font-weight:800;">${isOwned ? `Lv.${st.lv}${st.plus > 0 ? `+${st.plus}` : ''} ｜ HP:${st.hp} 攻:${st.atk}` : `⚡${u.cost} ｜ ガチャで解放`}</div>
+        <div style="font-size:0.68rem; color:#fde047; font-weight:800;">${isOwned ? `最高 Lv.${st.lv}${st.plus > 0 ? `+${st.plus}` : ''} ｜ HP:${st.hp} 攻:${st.atk}` : `⚡${u.cost} ｜ ガチャで解放`}</div>
         <div style="font-size:0.68rem; color:#94a3b8; line-height:1.4;">${u.desc}</div>
       `;
       grid.appendChild(card);
@@ -2845,7 +2898,7 @@ function importSaveCode() {
   try {
     const parsed = JSON.parse(decodeURIComponent(escape(atob(code.trim()))));
     if (!parsed || !parsed.owned) throw new Error('invalid');
-    saveData = Object.assign(createDefaultSave(), parsed);
+    saveData = migrateSaveData(Object.assign(createDefaultSave(), parsed), parsed);
     applyForceLandscape();
     persistSave();
     renderMenuTab();
@@ -3795,14 +3848,14 @@ function adminUnlockAllUnits() {
   UNITS_MASTER.forEach((u, idx) => {
     const t1 = TRAIT_KEYS[idx % TRAIT_KEYS.length];
     const t2 = TRAIT_KEYS[(idx + 2) % TRAIT_KEYS.length];
-    if (!saveData.owned[u.id]) {
-      saveData.owned[u.id] = { lv: 20, plus: 0, cap: 20, rank: 'MR', traits: [t1, t2] };
+    const mrKey = makeUnitKey(u.id, 'MR');
+    if (!saveData.owned[mrKey]) {
+      saveData.owned[mrKey] = { baseId: u.id, lv: 20, plus: 0, cap: 20, rank: 'MR', traits: [t1, t2] };
     } else {
-      if (saveData.owned[u.id].lv < 20) saveData.owned[u.id].lv = 20;
-      saveData.owned[u.id].cap = Math.max(20, saveData.owned[u.id].cap || 20);
-      saveData.owned[u.id].rank = 'MR';
-      if (!Array.isArray(saveData.owned[u.id].traits) || saveData.owned[u.id].traits.length < 2) {
-        saveData.owned[u.id].traits = [t1, t2];
+      if (saveData.owned[mrKey].lv < 20) saveData.owned[mrKey].lv = 20;
+      saveData.owned[mrKey].cap = Math.max(20, saveData.owned[mrKey].cap || 20);
+      if (!Array.isArray(saveData.owned[mrKey].traits) || saveData.owned[mrKey].traits.length < 2) {
+        saveData.owned[mrKey].traits = [t1, t2];
       }
     }
   });
