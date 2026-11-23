@@ -891,6 +891,49 @@
     white-space: nowrap;
   }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ================= スマホ縦持ち時 強制横画面（90度回転） ================= */
+  @media (orientation: portrait) and (max-width: 900px) {
+    body.force-landscape {
+      position: fixed;
+      top: 0;
+      left: 100vw;
+      width: 100dvh;
+      height: 100vw;
+      transform-origin: top left;
+      transform: rotate(90deg);
+      overflow: hidden;
+    }
+    body.force-landscape .screen {
+      width: 100%;
+      height: 100%;
+    }
+    body.force-landscape .modal-card {
+      max-height: 90%;
+    }
+    body.force-landscape .portrait-hint {
+      display: none !important;
+    }
+    body.force-landscape .battle-hud {
+      padding: 4px 10px;
+    }
+    body.force-landscape .battle-deck {
+      grid-template-columns: 78px 1fr 78px;
+      gap: 4px;
+      padding: 4px 6px;
+    }
+    body.force-landscape .unit-btn {
+      height: 46px;
+      padding: 2px;
+    }
+    body.force-landscape .unit-icon-canvas {
+      width: 24px;
+      height: 20px;
+    }
+    body.force-landscape .unit-name {
+      font-size: 0.52rem;
+    }
+  }
 </style>
 </head>
 <body>
@@ -1102,6 +1145,7 @@
       <span style="font-size:0.78rem; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="battleStageName">STAGE</span>
     </div>
     <div style="display:flex; align-items:center; gap:6px;">
+      <button id="battleRotateBtn" class="hud-btn" onclick="toggleForceLandscape()">🔄 横固定</button>
       <button id="speedBtn" class="hud-btn" onclick="toggleSpeed()">⏩ 1x</button>
       <button id="battleSoundBtn" class="hud-btn" onclick="toggleSound()">🔊</button>
       <div class="atp-display-pill">⚡ <span id="atpText">0 / 1000</span></div>
@@ -1621,6 +1665,7 @@ function createDefaultSave() {
     activePreset: 0,
     unlockedPresets: 2,
     facilities: { atpRate: 1, baseHp: 1, cannon: 1 },
+    forceLandscape: true,
     cleared: {}
   };
 }
@@ -1744,6 +1789,24 @@ function toggleSound() {
   const b = document.getElementById('battleSoundBtn');
   if (m) m.textContent = soundEnabled ? '🔊 SE: ON' : '🔇 SE: OFF';
   if (b) b.textContent = soundEnabled ? '🔊' : '🔇';
+}
+
+function applyForceLandscape() {
+  const isOn = saveData && saveData.forceLandscape !== false;
+  document.body.classList.toggle('force-landscape', isOn);
+  const btn = document.getElementById('battleRotateBtn');
+  if (btn) {
+    btn.textContent = isOn ? '🔄 横固定:ON' : '🔄 横固定:OFF';
+    btn.classList.toggle('active', isOn);
+  }
+}
+
+function toggleForceLandscape() {
+  saveData.forceLandscape = saveData.forceLandscape === false;
+  applyForceLandscape();
+  persistSave();
+  if (currentMenuTab === 'settings') renderMenuTab();
+  showToast(saveData.forceLandscape ? '🔄 強制横画面モード ON' : '📱 強制横画面モード OFF');
 }
 
 function showToast(msg) {
@@ -2737,6 +2800,13 @@ function renderMenuTab() {
             </div>
             <button class="btn-back" onclick="toggleSpeed(); renderMenuTab();">${speedMultiplier === 2 ? '⏩ 2x（倍速）' : '⏩ 1x（通常）'}</button>
           </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-top:1px solid rgba(148,163,184,0.18);">
+            <div>
+              <div style="font-size:0.88rem; font-weight:900;">強制横画面（スマホ縦持ち時）</div>
+              <div style="font-size:0.74rem; color:#94a3b8;">縦向きのまま画面を90度回転して横画面表示</div>
+            </div>
+            <button id="menuRotateBtn" class="btn-back" onclick="toggleForceLandscape()">${saveData.forceLandscape !== false ? '🔄 横固定: ON' : '📱 横固定: OFF'}</button>
+          </div>
         </div>
 
         <div class="chapter-block">
@@ -2776,6 +2846,7 @@ function importSaveCode() {
     const parsed = JSON.parse(decodeURIComponent(escape(atob(code.trim()))));
     if (!parsed || !parsed.owned) throw new Error('invalid');
     saveData = Object.assign(createDefaultSave(), parsed);
+    applyForceLandscape();
     persistSave();
     renderMenuTab();
     showToast('📥 セーブデータを復元しました！');
@@ -3761,6 +3832,7 @@ function adminResetSave() {
 
 // 起動
 loadSave();
+applyForceLandscape();
 syncCurrencyUI();
 </script>
 </body>
