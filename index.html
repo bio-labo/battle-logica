@@ -1225,23 +1225,6 @@
   </div>
 </div>
 
-<div id="adminModal" class="modal-overlay" onclick="if(event.target===this) closeAdminModal()">
-  <div class="modal-card" style="max-width:440px; border-color:#38bdf8;">
-    <div style="font-size:1.2rem; font-weight:900; color:#38bdf8;">🛠️ 管理者テストコンソール</div>
-    <div style="font-size:0.75rem; color:#94a3b8;">開発・バランス検証用のデバッグコマンドです</div>
-    <div style="display:flex; flex-direction:column; gap:8px;">
-      <button class="btn-action btn-primary" onclick="adminAddAtp(10000)">⚡ ATP +10,000 付与</button>
-      <button class="btn-action btn-primary" style="background:linear-gradient(135deg,#9333ea,#db2777);" onclick="adminAddMedals(100)">🧬 DNAメダル +100 付与</button>
-      <button class="btn-action btn-primary" style="background:linear-gradient(135deg,#0891b2,#06b6d4);" onclick="adminAddCores(20)">💎 進化コア +20 付与</button>
-      <button class="btn-action btn-primary" style="background:linear-gradient(135deg,#059669,#10b981);" onclick="adminUnlockAllUnits()">🧬 全20種族コンプリート（Lv.10）</button>
-      <button class="btn-action btn-primary" style="background:linear-gradient(135deg,#d97706,#f59e0b);" onclick="adminUnlockAllStages()">🔓 全ステージ解放</button>
-      <button class="btn-action btn-primary" style="background:linear-gradient(135deg,#0284c7,#0ea5e9);" onclick="adminMaxFacilities()">🏛️ バイオ研究所施設 MAX（Lv.20）</button>
-      <button class="btn-action btn-secondary" style="color:#fca5a5;" onclick="adminResetSave()">🗑️ セーブデータ初期化</button>
-    </div>
-    <button class="btn-action btn-secondary" onclick="closeAdminModal()">閉じる</button>
-  </div>
-</div>
-
 <div id="toast"></div>
 
 <script>
@@ -1693,40 +1676,153 @@ function createDefaultSave() {
   };
 }
 
-function migrateSaveData(data, parsedRaw) {
-  // 旧セーブデータの deck -> presets 移行
-  if (!Array.isArray(data.presets) || data.presets.length < 2) {
-    const legacyDeck = parsedRaw && Array.isArray(parsedRaw.deck) && parsedRaw.deck.length === 10
-      ? parsedRaw.deck
-      : createDefaultSave().presets[0].deck;
-    data.presets = [
-      { name: '編成1', deck: [...legacyDeck] },
-      { name: '編成2', deck: [...legacyDeck] }
-    ];
+function escapeHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function toSafeInt(val, min, max, fallback) {
+  if (val === null || val === undefined || val === '' || typeof val === 'boolean' || typeof val === 'object') {
+    return fallback;
   }
-  // 旧セーブデータの種族単位キー（ecoli等） -> 種族×ランクキー（ecoli__LR等）へ移行
+  const n = Number(val);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(min, Math.min(max, Math.floor(n)));
+}
+
+function sanitizeUnitOwnedMap(rawOwned) {
   const newOwned = {};
   const keyMap = {};
-  Object.keys(data.owned || {}).forEach(oldKey => {
-    const ow = data.owned[oldKey];
-    if (!ow) return;
-    const parsedKey = parseUnitKey(oldKey);
-    const def = UNITS_MASTER.find(u => u.id === parsedKey.baseId);
-    if (!def) return;
-    const rank = ow.rank || parsedKey.rank || def.rarity || 'N';
-    const newKey = parsedKey.rank ? oldKey : makeUnitKey(parsedKey.baseId, rank);
-    newOwned[newKey] = { ...ow, baseId: parsedKey.baseId, rank };
-    keyMap[oldKey] = newKey;
-  });
-  data.owned = newOwned;
-  data.presets.forEach(p => {
-    if (Array.isArray(p.deck)) {
-      p.deck = p.deck.map(id => (id ? (keyMap[id] || id) : null));
+  const hasRank = r => typeof r === 'string' && Object.prototype.hasOwnProperty.call(RANKS_MASTER, r);
+  const hasTrait = t => typeof t === 'string' && Object.prototype.hasOwnProperty.call(TRAITS_MASTER, t);
+  if (rawOwned && typeof rawOwned === 'object' && !Array.isArray(rawOwned)) {
+    Object.keys(rawOwned).forEach(oldKey => {
+      if (!Object.prototype.hasOwnProperty.call(rawOwned, oldKey)) return;
+      if (oldKey === '__proto__' || oldKey === 'constructor' || oldKey === 'prototype') return;
+      const ow = rawOwned[oldKey];
+      if (!ow || typeof ow !== 'object' || Array.isArray(ow)) return;
+      const parsedKey = parseUnitKey(oldKey);
+      const def = UNITS_MASTER.find(u => u.id === parsedKey.baseId);
+      if (!def) return;
+      const rank = hasRank(ow.rank) ? ow.rank : (hasRank(parsedKey.rank) ? parsedKey.rank : (hasRank(def.rarity) ? def.rarity : 'N'));
+      const newKey = makeUnitKey(def.id, rank);
+      const safeLv = toSafeInt(ow.lv, 1, 50, 1);
+      const safePlus = toSafeInt(ow.plus, 0, 99999, 0);
+      const safeCap = toSafeInt(ow.cap, 20, 50, 20);
+      const safeTraits = [];
+      if (Array.isArray(ow.traits)) {
+        ow.traits.forEach(t => {
+          if (hasTrait(t) && !safeTraits.includes(t) && safeTraits.length < 2) safeTraits.push(t);
+        });
+      }
+      if (safeTraits.length === 0) {
+        safeTraits.push(TRAIT_KEYS[def.id.length % TRAIT_KEYS.length]);
+      }
+      const prev = newOwned[newKey];
+      if (!prev || safeLv > prev.lv) {
+        newOwned[newKey] = {
+          baseId: def.id,
+          lv: safeLv,
+          plus: prev ? Math.max(prev.plus, safePlus) : safePlus,
+          cap: prev ? Math.max(prev.cap, safeCap) : safeCap,
+          rank,
+          traits: safeTraits
+        };
+      }
+      keyMap[oldKey] = newKey;
+    });
+  }
+  return { newOwned, keyMap };
+}
+
+function migrateSaveData(parsedRaw) {
+  const def = createDefaultSave();
+  if (!parsedRaw || typeof parsedRaw !== 'object' || Array.isArray(parsedRaw)) {
+    return def;
+  }
+
+  // 旧セーブデータの種族単位キー（ecoli等） -> 種族×ランクキー（ecoli__LR等）へ安全に移行・正規化
+  const { newOwned, keyMap } = sanitizeUnitOwnedMap(parsedRaw.owned);
+  const owned = Object.keys(newOwned).length > 0 ? newOwned : def.owned;
+  const fallbackUnitKey = Object.keys(owned)[0] || null;
+
+  const sanitizeDeck = rawDeck => {
+    const used = new Set();
+    const deck = Array(10).fill(null);
+    if (Array.isArray(rawDeck)) {
+      for (let i = 0; i < 10; i++) {
+        const rawId = rawDeck[i];
+        if (typeof rawId !== 'string' || !rawId) continue;
+        const mapped = Object.prototype.hasOwnProperty.call(keyMap, rawId) ? keyMap[rawId] : rawId;
+        if (Object.prototype.hasOwnProperty.call(owned, mapped) && !used.has(mapped)) {
+          deck[i] = mapped;
+          used.add(mapped);
+        }
+      }
     }
-  });
-  data.unlockedPresets = Math.max(2, Math.min(MAX_PRESETS, data.unlockedPresets || 2));
-  data.activePreset = Math.max(0, Math.min(data.unlockedPresets - 1, data.activePreset || 0));
-  return data;
+    if (used.size === 0 && fallbackUnitKey) {
+      deck[0] = fallbackUnitKey;
+    }
+    return deck;
+  };
+
+  // 旧セーブデータの deck -> presets 移行 & プリセット配列の厳格検証
+  const unlockedPresets = toSafeInt(parsedRaw.unlockedPresets, 2, MAX_PRESETS, 2);
+  const presets = [];
+  if (Array.isArray(parsedRaw.presets) && parsedRaw.presets.length >= 2) {
+    const count = Math.min(MAX_PRESETS, Math.max(unlockedPresets, parsedRaw.presets.length));
+    for (let i = 0; i < count; i++) {
+      const p = parsedRaw.presets[i];
+      const name = (p && typeof p.name === 'string' && p.name.trim()) ? p.name.trim().slice(0, 10) : `編成${i + 1}`;
+      presets.push({
+        name,
+        deck: sanitizeDeck(p && Array.isArray(p.deck) ? p.deck : def.presets[0].deck)
+      });
+    }
+  } else {
+    const legacyDeck = Array.isArray(parsedRaw.deck) && parsedRaw.deck.length === 10
+      ? sanitizeDeck(parsedRaw.deck)
+      : sanitizeDeck(def.presets[0].deck);
+    for (let i = 0; i < unlockedPresets; i++) {
+      presets.push({ name: `編成${i + 1}`, deck: [...legacyDeck] });
+    }
+  }
+
+  const rawFac = (parsedRaw.facilities && typeof parsedRaw.facilities === 'object' && !Array.isArray(parsedRaw.facilities))
+    ? parsedRaw.facilities
+    : {};
+  const facilities = {
+    atpRate: toSafeInt(rawFac.atpRate, 1, 20, 1),
+    baseHp: toSafeInt(rawFac.baseHp, 1, 20, 1),
+    cannon: toSafeInt(rawFac.cannon, 1, 20, 1)
+  };
+
+  const validStageIds = new Set(getAllStagesFlat().map(s => s.id));
+  const cleared = {};
+  if (parsedRaw.cleared && typeof parsedRaw.cleared === 'object' && !Array.isArray(parsedRaw.cleared)) {
+    Object.keys(parsedRaw.cleared).forEach(k => {
+      if (Object.prototype.hasOwnProperty.call(parsedRaw.cleared, k) && validStageIds.has(k) && parsedRaw.cleared[k]) {
+        cleared[k] = true;
+      }
+    });
+  }
+
+  return {
+    atp: toSafeInt(parsedRaw.atp, 0, 999999999, def.atp),
+    medals: toSafeInt(parsedRaw.medals, 0, 999999999, def.medals),
+    evoCores: toSafeInt(parsedRaw.evoCores, 0, 999999999, def.evoCores),
+    owned,
+    presets,
+    activePreset: toSafeInt(parsedRaw.activePreset, 0, Math.min(unlockedPresets, presets.length) - 1, 0),
+    unlockedPresets,
+    facilities,
+    forceLandscape: parsedRaw.forceLandscape !== false,
+    cleared
+  };
 }
 
 function loadSave() {
@@ -1734,7 +1830,7 @@ function loadSave() {
     const raw = localStorage.getItem(SAVE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      saveData = migrateSaveData(Object.assign(createDefaultSave(), parsed), parsed);
+      saveData = migrateSaveData(parsed);
       return;
     }
   } catch (e) {}
@@ -2281,15 +2377,15 @@ function renderFormation() {
     };
     card.innerHTML = `
       ${inDeck ? '<span class="in-deck-badge">編成中</span>' : ''}
-      <canvas id="ownIcon_${uid}" width="68" height="52"></canvas>
-      <div style="font-size:0.84rem; font-weight:900; text-align:center;">${st.dispName}</div>
-      <div style="font-size:0.7rem; color:${st.rankInfo.color}; font-weight:900;">${st.rankInfo.label} ｜ Lv.${st.lv}${st.plus > 0 ? `+${st.plus}` : ''}</div>
-      <div style="font-size:0.66rem; color:#bae6fd; font-weight:800;">特効: ${formatTraitsText(st.traits)}</div>
+      <canvas width="68" height="52"></canvas>
+      <div style="font-size:0.84rem; font-weight:900; text-align:center;">${escapeHtml(st.dispName)}</div>
+      <div style="font-size:0.7rem; color:${st.rankInfo.color}; font-weight:900;">${escapeHtml(st.rankInfo.label)} ｜ Lv.${st.lv}${st.plus > 0 ? `+${st.plus}` : ''}</div>
+      <div style="font-size:0.66rem; color:#bae6fd; font-weight:800;">特効: ${escapeHtml(formatTraitsText(st.traits))}</div>
       <div style="font-size:0.7rem; color:#fde047; font-weight:800;">⚡${st.cost} / HP:${st.hp} / 攻:${st.atk}</div>
     `;
     ownedGrid.appendChild(card);
 
-    const c = document.getElementById(`ownIcon_${uid}`);
+    const c = card.querySelector('canvas');
     const ctx = c.getContext('2d');
     ctx.save(); ctx.translate(34, 28);
     drawUnitSprite(ctx, st.shape, st.color, 0.68, 0, false);
@@ -2423,9 +2519,9 @@ function renderUpgradeList() {
       let unlockBtnHtml = '';
       if (!isAbsMax) {
         if (!canMoreInGlobal) {
-          unlockBtnHtml = `<button class="btn-lvup" style="background:#334155; color:#94a3b8; font-size:0.64rem; padding:5px 6px;" disabled>${nextCoreHint}</button>`;
+          unlockBtnHtml = `<button class="btn-lvup" style="background:#334155; color:#94a3b8; font-size:0.64rem; padding:5px 6px;" disabled>${escapeHtml(nextCoreHint)}</button>`;
         } else {
-          unlockBtnHtml = `<button class="btn-lvup" style="background:linear-gradient(135deg,#0891b2,#06b6d4); color:#fff; font-size:0.68rem; padding:5px 8px;" ${canUnlock ? '' : 'disabled'} onclick="unlockCharCap('${uid}')">${isLv20Ready ? '🔓 上限+1 (💎1)' : '🔒 Lv.20で解放'}</button>`;
+          unlockBtnHtml = `<button class="btn-lvup js-unlock-cap" style="background:linear-gradient(135deg,#0891b2,#06b6d4); color:#fff; font-size:0.68rem; padding:5px 8px;" ${canUnlock ? '' : 'disabled'}>${isLv20Ready ? '🔓 上限+1 (💎1)' : '🔒 Lv.20で解放'}</button>`;
         }
       }
 
@@ -2434,22 +2530,22 @@ function renderUpgradeList() {
       card.style.borderColor = st.rankInfo.color;
       card.style.background = 'linear-gradient(145deg, rgba(30,41,59,0.95), rgba(15,23,42,0.95))';
       card.innerHTML = `
-        <canvas id="upIcon_${uid}" width="58" height="48"></canvas>
+        <canvas width="58" height="48"></canvas>
         <div class="upgrade-info">
-          <div class="upgrade-name">${st.dispName} <span style="font-size:0.72rem; color:${st.rankInfo.color}; font-weight:900;">${st.rankInfo.label}</span></div>
+          <div class="upgrade-name">${escapeHtml(st.dispName)} <span style="font-size:0.72rem; color:${st.rankInfo.color}; font-weight:900;">${escapeHtml(st.rankInfo.label)}</span></div>
           <div class="upgrade-lv">Lv.${st.lv}${st.plus > 0 ? ` <span style="color:#fde047;">+${st.plus}</span>` : ''} / 上限 ${cap} <span style="font-size:0.68rem; color:#64748b;">(解放枠:${globalMax})</span></div>
           <div style="height:5px; background:rgba(2,6,23,0.7); border-radius:999px; overflow:hidden; margin:4px 0;">
             <div style="width:${pct}%; height:100%; background:${st.rankInfo.color};"></div>
           </div>
           <div class="upgrade-stats">HP: ${st.hp} ｜ 攻撃: ${st.atk} ｜ ⚡${st.cost}</div>
-          <div style="font-size:0.68rem; color:#bae6fd; font-weight:800; margin-top:2px;">特効: ${formatTraitsText(st.traits)}</div>
+          <div style="font-size:0.68rem; color:#bae6fd; font-weight:800; margin-top:2px;">特効: ${escapeHtml(formatTraitsText(st.traits))}</div>
           <div style="display:flex; gap:5px; margin-top:6px; flex-wrap:wrap;">
-            <button class="hud-btn" style="font-size:0.64rem; padding:3px 7px; border-color:rgba(250,204,21,0.55); color:#fde047; ${convBlocked ? 'opacity:0.45;' : ''}" onclick="convertOwnedUnit('${uid}','atp')">${convPrefix} ⚡+${rate.atp}</button>
-            <button class="hud-btn" style="font-size:0.64rem; padding:3px 7px; border-color:rgba(192,132,252,0.55); color:#e9d5ff; ${convBlocked ? 'opacity:0.45;' : ''}" onclick="convertOwnedUnit('${uid}','medal')">${convPrefix} 🧬+${rate.medal}</button>
+            <button class="hud-btn js-conv-atp" style="font-size:0.64rem; padding:3px 7px; border-color:rgba(250,204,21,0.55); color:#fde047; ${convBlocked ? 'opacity:0.45;' : ''}">${convPrefix} ⚡+${rate.atp}</button>
+            <button class="hud-btn js-conv-medal" style="font-size:0.64rem; padding:3px 7px; border-color:rgba(192,132,252,0.55); color:#e9d5ff; ${convBlocked ? 'opacity:0.45;' : ''}">${convPrefix} 🧬+${rate.medal}</button>
           </div>
         </div>
         <div style="display:flex; flex-direction:column; gap:5px; flex-shrink:0;">
-          <button class="btn-lvup" ${canUp ? '' : 'disabled'} onclick="upgradeChar('${uid}')">
+          <button class="btn-lvup js-upgrade-char" ${canUp ? '' : 'disabled'}>
             ${st.lv >= 50 ? 'MAX' : (isMaxCap ? '上限到達' : `LvUP ⚡${cost}`)}
           </button>
           ${unlockBtnHtml}
@@ -2457,7 +2553,16 @@ function renderUpgradeList() {
       `;
       container.appendChild(card);
 
-      const c = document.getElementById(`upIcon_${uid}`);
+      const convAtpBtn = card.querySelector('.js-conv-atp');
+      if (convAtpBtn) convAtpBtn.onclick = () => convertOwnedUnit(uid, 'atp');
+      const convMedalBtn = card.querySelector('.js-conv-medal');
+      if (convMedalBtn) convMedalBtn.onclick = () => convertOwnedUnit(uid, 'medal');
+      const lvupBtn = card.querySelector('.js-upgrade-char');
+      if (lvupBtn) lvupBtn.onclick = () => upgradeChar(uid);
+      const unlockBtn = card.querySelector('.js-unlock-cap');
+      if (unlockBtn) unlockBtn.onclick = () => unlockCharCap(uid);
+
+      const c = card.querySelector('canvas');
       const ctx = c.getContext('2d');
       ctx.save(); ctx.translate(29, 26);
       drawUnitSprite(ctx, st.shape, st.color, 0.58, 0, false);
@@ -2812,7 +2917,7 @@ function renderMenuTab() {
           </div>
         </button>
 
-        <a href="https://bio-labo.github.io/" class="nav-card nav-menu" style="text-decoration:none; color:inherit; border-color:rgba(168,85,247,0.55); border-bottom-color:#7e22ce; background:linear-gradient(135deg, rgba(147,51,234,0.22), #0f172a);">
+        <a href="https://bio-labo.github.io/" rel="noopener noreferrer" class="nav-card nav-menu" style="text-decoration:none; color:inherit; border-color:rgba(168,85,247,0.55); border-bottom-color:#7e22ce; background:linear-gradient(135deg, rgba(147,51,234,0.22), #0f172a);">
           <div class="nav-icon">🌐</div>
           <div>
             <div class="nav-title">ロジカ公式ポータルへ</div>
@@ -2939,7 +3044,7 @@ function renderMenuTab() {
           </div>
         </div>
 
-        <div style="text-align:center; padding:10px; font-size:0.74rem; color:#64748b;" onclick="handleSecretAdminTap()">
+        <div style="text-align:center; padding:10px; font-size:0.74rem; color:#64748b;">
           BATTLE LOGICA Ver 1.0
         </div>
       </div>
@@ -2951,7 +3056,9 @@ function exportSaveCode() {
   try {
     const code = btoa(unescape(encodeURIComponent(JSON.stringify(saveData))));
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(code).then(() => showToast('📋 バックアップコードをコピーしました！'));
+      navigator.clipboard.writeText(code)
+        .then(() => showToast('📋 バックアップコードをコピーしました！'))
+        .catch(() => prompt('バックアップコードをコピーしてください：', code));
     } else {
       prompt('バックアップコードをコピーしてください：', code);
     }
@@ -2963,10 +3070,17 @@ function exportSaveCode() {
 function importSaveCode() {
   const code = prompt('バックアップコードを貼り付けてください：');
   if (!code) return;
+  const trimmed = code.trim();
+  if (trimmed.length > 100000) {
+    showToast('⚠️ 無効なコードです');
+    return;
+  }
   try {
-    const parsed = JSON.parse(decodeURIComponent(escape(atob(code.trim()))));
-    if (!parsed || !parsed.owned) throw new Error('invalid');
-    saveData = migrateSaveData(Object.assign(createDefaultSave(), parsed), parsed);
+    const parsed = JSON.parse(decodeURIComponent(escape(atob(trimmed))));
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('invalid');
+    const { newOwned } = sanitizeUnitOwnedMap(parsed.owned);
+    if (Object.keys(newOwned).length === 0) throw new Error('invalid');
+    saveData = migrateSaveData(parsed);
     applyForceLandscape();
     persistSave();
     renderMenuTab();
@@ -3863,92 +3977,6 @@ function drawCuteEyes(ctx, x, y, angry) {
     ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(x - 7, y - 5); ctx.lineTo(x - 1, y - 3); ctx.moveTo(x + 8, y - 5); ctx.lineTo(x + 2, y - 3); ctx.stroke();
   }
-}
-
-/* ============================================================================
-   6. 管理者テストコンソール（パスコード保護）
-============================================================================ */
-let adminTapCount = 0;
-let adminTapTimer = null;
-
-function handleSecretAdminTap() {
-  adminTapCount++;
-  clearTimeout(adminTapTimer);
-  adminTapTimer = setTimeout(() => { adminTapCount = 0; }, 1800);
-  if (adminTapCount >= 7) {
-    adminTapCount = 0;
-    const pass = prompt('管理者パスコードを入力してください：');
-    if (pass === 'bio2026') {
-      openAdminModal();
-    } else if (pass !== null) {
-      showToast('パスコードが違います');
-    }
-  }
-}
-
-function openAdminModal() {
-  document.getElementById('adminModal').classList.add('show');
-}
-
-function closeAdminModal() {
-  document.getElementById('adminModal').classList.remove('show');
-}
-
-function adminAddAtp(amount) {
-  saveData.atp += amount;
-  persistSave();
-  showToast(`⚡ ATP +${amount.toLocaleString()} 付与！`);
-}
-
-function adminAddMedals(amount) {
-  saveData.medals += amount;
-  persistSave();
-  showToast(`🧬 DNAメダル +${amount} 付与！`);
-}
-
-function adminAddCores(amount) {
-  saveData.evoCores = (saveData.evoCores || 0) + amount;
-  persistSave();
-  showToast(`💎 進化コア +${amount} 付与！`);
-}
-
-function adminUnlockAllUnits() {
-  UNITS_MASTER.forEach((u, idx) => {
-    const t1 = TRAIT_KEYS[idx % TRAIT_KEYS.length];
-    const t2 = TRAIT_KEYS[(idx + 2) % TRAIT_KEYS.length];
-    const mrKey = makeUnitKey(u.id, 'MR');
-    if (!saveData.owned[mrKey]) {
-      saveData.owned[mrKey] = { baseId: u.id, lv: 20, plus: 0, cap: 20, rank: 'MR', traits: [t1, t2] };
-    } else {
-      if (saveData.owned[mrKey].lv < 20) saveData.owned[mrKey].lv = 20;
-      saveData.owned[mrKey].cap = Math.max(20, saveData.owned[mrKey].cap || 20);
-      if (!Array.isArray(saveData.owned[mrKey].traits) || saveData.owned[mrKey].traits.length < 2) {
-        saveData.owned[mrKey].traits = [t1, t2];
-      }
-    }
-  });
-  persistSave();
-  showToast('🧬 全20種族（MR・Lv.20・2属性対応）を解放しました！');
-}
-
-function adminUnlockAllStages() {
-  getAllStagesFlat().forEach(st => { saveData.cleared[st.id] = true; });
-  persistSave();
-  showToast('🔓 全ステージを解放しました！');
-}
-
-function adminMaxFacilities() {
-  saveData.facilities = { atpRate: 20, baseHp: 20, cannon: 20 };
-  persistSave();
-  showToast('🏛️ 研究所施設をすべてMAX（Lv.20）にしました！');
-}
-
-function adminResetSave() {
-  saveData = createDefaultSave();
-  persistSave();
-  closeAdminModal();
-  goHome();
-  showToast('🗑️ セーブデータを初期化しました');
 }
 
 // 起動
