@@ -154,6 +154,34 @@
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.15);
   }
 
+  .hero-brand-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1 1 280px;
+    min-width: 0;
+  }
+
+  .hero-app-icon {
+    width: clamp(60px, 9vw, 84px);
+    height: clamp(60px, 9vw, 84px);
+    border-radius: 18px;
+    flex-shrink: 0;
+    object-fit: cover;
+    box-shadow: 0 8px 22px rgba(220, 38, 38, 0.45), 0 0 0 2px rgba(254, 240, 138, 0.35);
+    display: block;
+  }
+
+  .header-app-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    flex-shrink: 0;
+    object-fit: cover;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.45);
+    display: block;
+  }
+
   .logo-badge {
     display: inline-block;
     background: linear-gradient(135deg, #0284c7, #7c3aed);
@@ -942,7 +970,8 @@
 <section id="screen-title" class="screen active">
   <header class="app-header">
     <div class="header-left">
-      <span class="header-title">⚔️ バトル・ロジカ</span>
+      <img id="headerAppIcon" class="header-app-icon" alt="バトル・ロジカ">
+      <span class="header-title">バトル・ロジカ</span>
     </div>
     <div class="currency-group">
       <div class="currency-pill">⚡ <span id="homeAtp">0</span> ATP</div>
@@ -953,10 +982,13 @@
   <div class="scroll-body">
     <div class="container-max">
       <div class="home-hero">
-        <div>
-          <span class="logo-badge">LOGICA SERIES 第4弾</span>
-          <h1 class="hero-title">バトル・ロジカ（BATTLE LOGICA）</h1>
-          <p class="hero-sub">全20種族の微生物＆免疫細胞を集め、最強の10体デッキで病原体コロニーを制圧せよ！</p>
+        <div class="hero-brand-row">
+          <img id="heroAppIcon" class="hero-app-icon" alt="バトル・ロジカ 公式アイコン">
+          <div style="min-width:0;">
+            <span class="logo-badge">LOGICA SERIES 第4弾</span>
+            <h1 class="hero-title">バトル・ロジカ（BATTLE LOGICA）</h1>
+            <p class="hero-sub">全20種族の微生物＆免疫細胞を集め、最強の10体デッキで病原体コロニーを制圧せよ！</p>
+          </div>
         </div>
         <div class="home-stats-mini">
           <div class="mini-stat-box">
@@ -3979,9 +4011,143 @@ function drawCuteEyes(ctx, x, y, angry) {
   }
 }
 
+function createBattleAppIconDataUrl() {
+  const c = document.createElement('canvas');
+  c.width = 256;
+  c.height = 256;
+  const ctx = c.getContext('2d');
+  ctx.scale(0.25, 0.25);
+
+  const W = 1024, H = 1024, R = 224;
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(R, 0);
+  ctx.lineTo(W - R, 0); ctx.quadraticCurveTo(W, 0, W, R);
+  ctx.lineTo(W, H - R); ctx.quadraticCurveTo(W, H, W - R, H);
+  ctx.lineTo(R, H); ctx.quadraticCurveTo(0, H, 0, H - R);
+  ctx.lineTo(0, R); ctx.quadraticCurveTo(0, 0, R, 0);
+  ctx.closePath();
+  ctx.clip();
+
+  const bgGrad = ctx.createLinearGradient(0, 0, W, H);
+  bgGrad.addColorStop(0.0, '#7f1d1d');
+  bgGrad.addColorStop(0.45, '#dc2626');
+  bgGrad.addColorStop(1.0, '#f97316');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  const aura = ctx.createRadialGradient(512, 512, 40, 512, 512, 460);
+  aura.addColorStop(0.0, 'rgba(253, 224, 71, 0.24)');
+  aura.addColorStop(0.55, 'rgba(249, 115, 22, 0.14)');
+  aura.addColorStop(1.0, 'rgba(127, 29, 29, 0.0)');
+  ctx.fillStyle = aura;
+  ctx.fillRect(0, 0, W, H);
+
+  const gloss = ctx.createLinearGradient(0, 0, 0, H * 0.45);
+  gloss.addColorStop(0.0, 'rgba(255, 255, 255, 0.20)');
+  gloss.addColorStop(1.0, 'rgba(255, 255, 255, 0.0)');
+  ctx.fillStyle = gloss;
+  ctx.fillRect(0, 0, W, H * 0.45);
+
+  // 背面シールド
+  ctx.save();
+  ctx.globalAlpha = 0.28;
+  const cx = 512, topY = 165, halfW = 265, totalH = 690;
+  const midY = topY + totalH * 0.48, botY = topY + totalH;
+  ctx.beginPath();
+  ctx.moveTo(cx, topY);
+  ctx.quadraticCurveTo(cx + halfW * 0.55, topY + 28, cx + halfW, topY + 62);
+  ctx.lineTo(cx + halfW, midY);
+  ctx.bezierCurveTo(cx + halfW, midY + 150, cx + halfW * 0.55, botY - 60, cx, botY);
+  ctx.bezierCurveTo(cx - halfW * 0.55, botY - 60, cx - halfW, midY + 150, cx - halfW, midY);
+  ctx.lineTo(cx - halfW, topY + 62);
+  ctx.quadraticCurveTo(cx - halfW * 0.55, topY + 28, cx, topY);
+  ctx.closePath();
+  const sGrad = ctx.createLinearGradient(250, 165, 774, 855);
+  sGrad.addColorStop(0.0, '#ffffff');
+  sGrad.addColorStop(0.5, '#cbd5e1');
+  sGrad.addColorStop(1.0, '#475569');
+  ctx.fillStyle = sGrad;
+  ctx.fill();
+  ctx.globalAlpha = 0.42;
+  ctx.strokeStyle = '#fef08a';
+  ctx.lineWidth = 18;
+  ctx.stroke();
+  ctx.restore();
+
+  // 交差する双剣
+  [-42, 42].forEach(deg => {
+    ctx.save();
+    ctx.translate(512, 534);
+    ctx.rotate(deg * Math.PI / 180);
+
+    ctx.beginPath();
+    ctx.moveTo(0, -370); ctx.lineTo(0, 118); ctx.lineTo(-30, 118); ctx.lineTo(-38, -280);
+    ctx.closePath();
+    const bl = ctx.createLinearGradient(-38, -370, 0, 118);
+    bl.addColorStop(0, '#ffffff'); bl.addColorStop(0.5, '#f1f5f9'); bl.addColorStop(1, '#cbd5e1');
+    ctx.fillStyle = bl; ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(0, -370); ctx.lineTo(38, -280); ctx.lineTo(30, 118); ctx.lineTo(0, 118);
+    ctx.closePath();
+    const br = ctx.createLinearGradient(0, -370, 38, 118);
+    br.addColorStop(0, '#cbd5e1'); br.addColorStop(0.5, '#94a3b8'); br.addColorStop(1, '#64748b');
+    ctx.fillStyle = br; ctx.fill();
+
+    const gGrad = ctx.createLinearGradient(-112, 108, 112, 152);
+    gGrad.addColorStop(0, '#b45309'); gGrad.addColorStop(0.3, '#fde047'); gGrad.addColorStop(0.7, '#fef08a'); gGrad.addColorStop(1, '#92400e');
+    ctx.beginPath();
+    ctx.moveTo(-114, 118); ctx.quadraticCurveTo(0, 96, 114, 118);
+    ctx.quadraticCurveTo(126, 134, 110, 148); ctx.quadraticCurveTo(0, 136, -110, 148);
+    ctx.quadraticCurveTo(-126, 134, -114, 118);
+    ctx.closePath();
+    ctx.fillStyle = gGrad; ctx.fill();
+
+    ctx.beginPath();
+    ctx.roundRect(-20, 144, 40, 114, 8);
+    ctx.fillStyle = '#3f1d0b'; ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(0, 278, 32, 0, Math.PI * 2);
+    ctx.fillStyle = '#f59e0b'; ctx.fill();
+    ctx.restore();
+  });
+
+  // 交差スパーク
+  ctx.save();
+  ctx.translate(512, 465);
+  const sp = ctx.createRadialGradient(0, 0, 2, 0, 0, 68);
+  sp.addColorStop(0.0, 'rgba(255, 255, 255, 0.85)');
+  sp.addColorStop(0.4, 'rgba(253, 224, 71, 0.45)');
+  sp.addColorStop(1.0, 'rgba(253, 224, 71, 0.0)');
+  ctx.fillStyle = sp;
+  ctx.beginPath(); ctx.arc(0, 0, 68, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+
+  ctx.restore();
+  return c.toDataURL('image/png');
+}
+
+function applyBattleAppIcon() {
+  const url = createBattleAppIconDataUrl();
+  const hero = document.getElementById('heroAppIcon');
+  const header = document.getElementById('headerAppIcon');
+  if (hero) hero.src = url;
+  if (header) header.src = url;
+  let fav = document.querySelector('link[rel="icon"]');
+  if (!fav) {
+    fav = document.createElement('link');
+    fav.rel = 'icon';
+    document.head.appendChild(fav);
+  }
+  fav.href = url;
+}
+
 // 起動
 loadSave();
 applyForceLandscape();
+applyBattleAppIcon();
 syncCurrencyUI();
 </script>
 </body>
